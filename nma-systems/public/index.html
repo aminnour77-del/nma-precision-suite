@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N.M.A. SYSTEMS - Enterprise Suite</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0b0f19; color: #fff; margin: 0; padding: 15px; }
+    h1 { color: #38bdf8; font-size: 20px; text-align: center; }
+    .video-container { display: flex; flex-direction: column; gap: 10px; max-width: 500px; margin: 0 auto; }
+    video { width: 100%; height: 220px; background: #000; border-radius: 8px; border: 1px solid #1e293b; object-fit: cover; }
+    .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-call { background: #16a34a; }
+    .btn-end { background: #dc2626; }
+    #incomingBanner { display: none; background: #0284c7; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+  <h1>N.M.A. COMMS V2</h1>
+
+  <div id="incomingBanner">
+    <span id="callerLabel">Chiamata in arrivo...</span><br><br>
+    <button onclick="acceptCall()" class="btn-call">RISPONDI</button>
+    <button onclick="hangUp()" class="btn-end">RIFIUTA</button>
+  </div>
+
+  <div class="video-container">
+    <video id="localVideo" autoplay playsinline muted></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+    
+    <div class="btn-group">
+      <button onclick="startCall(false)" style="background:#0284c7;">🎤 Solo Audio</button>
+      <button onclick="startCall(true)" class="btn-call">📹 Avvia Video</button>
+      <button onclick="hangUp()" class="btn-end">🔴 Chiudi</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let localStream = null;
+    let pc = null;
+    let pendingOffer = null;
+    let targetSocketId = null;
+
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    async function getMedia(video) {
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+      }
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: video ? { facingMode: 'user' } : false
+      });
+      document.getElementById('localVideo').srcObject = localStream;
+    }
+
+    function createPeer() {
+      pc = new RTCPeerConnection(configuration);
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      pc.ontrack = (event) => {
+        const remoteVid = document.getElementById('remoteVideo');
+        if (remoteVid.srcObject !== event.streams[0]) {
+          remoteVid.srcObject = event.streams[0];
+          remoteVid.play().catch(e => console.log("Autoplay unblocked"));
+        }
+      };
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('ice-candidate', { candidate: event.candidate });
+        }
+      };
+    }
+
+    async function startCall(video) {
+      try {
+        await getMedia(video);
+        createPeer();
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('call-user', { offer, isVideo: video });
+      } catch (e) {
+        alert("Errore Fotocamera/Microfono: " + e.message);
+      }
+    }
+
+    socket.on('incoming-call', async (data) => {
+      pendingOffer = data.offer;
+      targetSocketId = data.from;
+      document.getElementById('incomingBanner').style.display = 'block';
+    });
+
+    async function acceptCall() {
+      document.getElementById('incomingBanner').style.display = 'none';
+      try {
+        await getMedia(true);
+        createPeer();
+        await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('answer-call', { to: targetSocketId, answer });
+      } catch (e) {
+        alert("Errore in risposta: " + e.message);
+      }
+    }
+
+    socket.on('call-answered', async (data) => {
+      if (pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      }
+    });
+
+    socket.on('ice-candidate', async (data) => {
+      if (pc && data.candidate) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (e) {}
+      }
+    });
+
+    function hangUp() {
+      if (pc) { pc.close(); pc = null; }
+      if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+      document.getElementById('localVideo').srcObject = null;
+      document.getElementById('remoteVideo').srcObject = null;
+      document.getElementById('incomingBanner').style.display = 'none';
+      socket.emit('end-call');
+    }
+
+    socket.on('call-ended', hangUp);
+  </script>
+</body>
+</html>
