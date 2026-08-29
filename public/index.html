@@ -470,12 +470,42 @@
       }
     };
 
-    function addLog(msg, isWarning = false) {
-      const log = document.getElementById('event-log');
+    let globalLogs = [];
+
+    function addLog(msg, isWarning = false, fromServer = false) {
       const time = new Date().toLocaleTimeString();
-      const color = isWarning ? '#ef4444' : '#94a3b8';
-      log.innerHTML = `<div style="color:${color};">[${time}] ${msg}</div>` + log.innerHTML;
+      const logEntry = { time, msg, isWarning };
+      if (!fromServer) socket.emit("system-log", logEntry);
+      
+      globalLogs.unshift(logEntry);
+      const logEl = document.getElementById("event-log");
+      const color = isWarning ? "#ef4444" : "#94a3b8";
+      logEl.innerHTML = `<div style="color:${color};">[${time}] ${msg}</div>` + logEl.innerHTML;
     }
+
+    socket.on("system-log", (l) => {
+      globalLogs.unshift(l);
+      const logEl = document.getElementById("event-log");
+      const color = l.isWarning ? "#ef4444" : "#94a3b8";
+      logEl.innerHTML = `<div style="color:${color};">[${l.time}] ${l.msg}</div>` + logEl.innerHTML;
+    });
+
+    socket.on("history", (db) => {
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML = "";
+      db.chat.forEach(d => {
+        chatBox.innerHTML += `<div style="margin-bottom:4px;"><b style="color:#38bdf8;">${d.user} [${d.timestamp}]:</b> ${d.text}</div>`;
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      globalLogs = db.logs.reverse();
+      const logEl = document.getElementById("event-log");
+      logEl.innerHTML = "";
+      globalLogs.forEach(l => {
+        const color = l.isWarning ? "#ef4444" : "#94a3b8";
+        logEl.innerHTML += `<div style="color:${color};">[${l.time}] ${l.msg}</div>`;
+      });
+    });
 
     function updateChart(cData) {
       const option = {
@@ -612,8 +642,8 @@
 
     window.downloadGeneratedPDF = function() {
       const activeData = tabsData[currentTab];
-      const user = document.getElementById('username').value || 'Ing. N. M. Amine';
-      pdfMake.createPdf(getPDFDocDefinition(activeData, user)).download(`NMA_Collaudo_${currentTab}.pdf`);
+      const user = document.getElementById("username").value || "Ing. N. M. Amine";
+      pdfMake.createPdf(getPDFDocDefinition(activeData, user, globalLogs)).download(`NMA_Collaudo_${currentTab}.pdf`);
     };
 
     window.addEventListener('resize', () => {

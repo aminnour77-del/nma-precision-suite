@@ -1,86 +1,61 @@
-export function getPDFDocDefinition(activeData, operatorName) {
-  const tableRows = [
-    [
-      { text: 'PARAMETRO DI MISURA', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
-      { text: 'VALORE RILEVATO', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
-      { text: 'STATO DI CONFORMITÀ', bold: true, fillColor: '#0f172a', color: '#38bdf8' }
-    ]
+export function getPDFDocDefinition(data, user, logs) {
+  const logBody = [
+    [{ text: 'Orario', style: 'tableHeader', fillColor: '#1e293b', color: 'white' }, 
+     { text: 'Descrizione Evento / Allarme', style: 'tableHeader', fillColor: '#1e293b', color: 'white' }]
   ];
-
-  activeData.metrics.forEach(m => {
-    tableRows.push([
-      { text: m.t, fontSize: 10 },
-      { text: m.v, bold: true, fontSize: 10 },
-      { text: m.st, color: m.ok ? '#16a34a' : '#d97706', bold: true, fontSize: 9 }
+  
+  logs.forEach(l => {
+    logBody.push([
+      l.time, 
+      { text: l.msg, color: l.isWarning ? 'red' : 'black' }
     ]);
   });
 
+  if (logBody.length === 1) {
+    logBody.push(['-', 'Nessuna anomalia o evento registrato in questa sessione.']);
+  }
+
   return {
-    pageSize: 'A4',
-    pageMargins: [35, 40, 35, 40],
     content: [
+      { text: 'N.M.A. SYSTEMS - CERTIFICATO DI COLLAUDO SCADA', style: 'header' },
+      { text: `Operatore: ${user} | Generato il: ${new Date().toLocaleString()}`, margin: [0, 0, 0, 20], color: '#64748b' },
+      
+      { text: `Target Monitoraggio: ${data.title}`, style: 'subheader' },
+      { text: `Coordinate Nodo: ${data.label} (GPS: ${data.gps[0]}, ${data.gps[1]})`, margin: [0, 0, 0, 20] },
+      
+      { text: '1. RILEVAMENTI SENSORISTICI IN TEMPO REALE', style: 'subheader' },
       {
-        columns: [
-          {
-            text: 'N.M.A. SYSTEMS & ENGINEERING\nPrecision Telemetry & Quality Assurance\nTorino - San Benigno Canavese (TO)',
-            fontSize: 9,
-            color: '#475569'
-          },
-          {
-            text: `CERTIFICATO DI VERIFICA TECNICA\nData: ${new Date().toLocaleDateString('it-IT')}\nRef: NMA-REP-${Math.floor(100000 + Math.random() * 900000)}`,
-            alignment: 'right',
-            fontSize: 9,
-            bold: true,
-            color: '#0284c7'
-          }
-        ]
-      },
-      { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
-      { text: '\n' },
-      { text: `RAPPORTO TECNICO DI TELEMETRIA: ${activeData.title.toUpperCase()}`, fontSize: 14, bold: true, color: '#0f172a' },
-      { text: `Operatore Responsabile: ${operatorName} | Nodo GPS: ${activeData.label}`, fontSize: 10, italic: true, color: '#475569' },
-      { text: '\n' },
-      { text: 'Normative di Riferimento Aziendali & Standard di Qualità:', fontSize: 11, bold: true, color: '#0284c7' },
-      {
-        table: {
-          widths: ['*'],
-          body: [[
-            {
-              fillColor: '#f8fafc',
-              border: [true, true, true, true],
-              borderColor: '#cbd5e1',
-              text: '• ISO 9001:2015 (Gestione Qualità)\n• ISO 14001:2015 (Gestione Ambientale)\n• ISO 45001:2018 (Salute e Sicurezza sul Lavoro)\n• ISO 3834-2 (Qualità Saldatura dei Metalli)\n• UNI 9737 / UNI ISO 9606-1 (Qualificazione Operatori e Saldatori)',
-              fontSize: 9,
-              color: '#334155'
-            }
-          ]]
-        }
-      },
-      { text: '\n' },
-      { text: 'Rilevazioni Telemetriche in Tempo Reale:', fontSize: 11, bold: true, color: '#0284c7' },
-      {
+        style: 'tableExample',
         table: {
           headerRows: 1,
           widths: ['*', '*', '*'],
-          body: tableRows
-        },
-        layout: 'LightHorizontalLines'
+          body: [
+            [{text: 'Metrica', style: 'tableHeader'}, {text: 'Valore', style: 'tableHeader'}, {text: 'Stato', style: 'tableHeader'}],
+            ...data.metrics.map(m => [
+              m.t, 
+              `${typeof m.v === 'number' ? m.v.toFixed(2) : m.v}${m.unit}`, 
+              { text: m.st, color: m.alarm ? 'red' : 'green', bold: true }
+            ])
+          ]
+        }
       },
-      { text: '\n' },
-      { text: 'Esito Collaudo Telemetrico:', fontSize: 11, bold: true, color: '#0284c7' },
+      
+      { text: '2. AUDIT EVENT LOG (Tracciabilità ISO 9001:2015)', style: 'subheader', margin: [0, 20, 0, 10] },
       {
-        text: '✔ CONFORME AL 100% - Tutti i parametri acquisiti rientrano nei range di tolleranza previsti dal disciplinare di qualifica ISO/UNI.',
-        color: '#16a34a',
-        bold: true,
-        fontSize: 10
-      },
-      { text: '\n\n' },
-      {
-        columns: [
-          { text: `Firma Operatore Telemetria\n\n_______________________\n${operatorName}`, fontSize: 9 },
-          { text: 'Firma Controllo Qualità N.M.A.\n\n_______________________\nIng. N. M. Amine', fontSize: 9, alignment: 'right' }
-        ]
+        style: 'tableExample',
+        table: {
+          headerRows: 1,
+          widths: ['auto', '*'],
+          body: logBody
+        }
       }
-    ]
+    ],
+    styles: {
+      header: { fontSize: 18, bold: true, color: '#0284c7', margin: [0, 0, 0, 5] },
+      subheader: { fontSize: 13, bold: true, color: '#0f172a', margin: [0, 10, 0, 5] },
+      tableExample: { margin: [0, 5, 0, 15] },
+      tableHeader: { bold: true, fontSize: 11, color: '#333' }
+    },
+    defaultStyle: { fontSize: 10 }
   };
 }
