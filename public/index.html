@@ -9,20 +9,57 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Librerie 3D e Grafiche Avanzate -->
+  <!-- Three.js + Loaders + Controls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- ECharts & PDFMake -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .grid-main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .grid-bottom {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 0.8fr;
+      gap: 16px;
+    }
+    #three-canvas-container {
+      width: 100%;
+      height: 320px;
+      border-radius: 8px;
+      background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+    }
+    .canvas-overlay {
+      position: absolute;
+      bottom: 8px;
+      left: 12px;
+      font-size: 11px;
+      color: #38bdf8;
+      background: rgba(3, 7, 18, 0.7);
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
 
   <header>
     <div>
       <h1>N.M.A. SYSTEMS 🌐 DIGITAL TWIN</h1>
-      <small style="color: #64748b;">Telemetry & Real-Time Asset Simulation Platform</small>
+      <small style="color: #64748b;">Enterprise Telemetry & Real-Time Asset Simulation Platform</small>
     </div>
     <div>
       <span class="badge">● 5G RTK ACTIVE (0.4ms)</span>
@@ -36,15 +73,15 @@
     <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Telemetry OBD-III</button>
   </div>
 
-  <div class="grid">
-    <!-- Sezione Telemetria Avanzata -->
-    <div class="card" style="grid-column: span 2;">
-      <h2 id="module-title">🚗 Automotive Telemetry OBD-III (Real-Time Sensor Suite)</h2>
+  <div class="grid-main">
+    <!-- Telemetria Avanzata -->
+    <div class="card">
+      <h2 id="module-title">🚗 Automotive Telemetry OBD-III</h2>
       <div class="f1-grid" id="metrics-container"></div>
-      <div id="echarts2d" style="width: 100%; height: 280px; border-radius:8px;"></div>
+      <div id="echarts2d" style="width: 100%; height: 300px;"></div>
     </div>
 
-    <!-- Mappa Tattica -->
+    <!-- Mappa Tattica GPS -->
     <div class="card">
       <h2>🌍 GPS Global Tactical Radar</h2>
       <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
@@ -52,16 +89,17 @@
         <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
         <div class="f1-box"><span class="f1-title">Stato</span><span class="f1-val" style="color:#4ade80;">TRACKING</span></div>
       </div>
-      <div id="map"></div>
+      <div id="map" style="height: 300px; border-radius: 6px;"></div>
     </div>
   </div>
 
-  <div class="grid">
-    <!-- Render 3D Contestuale dell'Asset -->
+  <div class="grid-bottom">
+    <!-- Gemello Digitale 3D con OrbitControls e Modelli GLTF -->
     <div class="card">
-      <h2>🚘 Gemello Digitale 3D (Interactive Asset Twin)</h2>
-      <div id="three-canvas-container" style="width: 100%; height: 180px; border-radius: 8px; background: #030712; position: relative;"></div>
-      <small id="asset-label" style="color: #38bdf8; display: block; margin-top: 6px; text-align: center; font-weight: bold;">Rendering Modello 3D Asset...</small>
+      <h2>🚘 Gemello Digitale 3D (CAD/GLTF Interactive Asset)</h2>
+      <div id="three-canvas-container">
+        <div class="canvas-overlay" id="asset-label">Caricamento Modello CAD...</div>
+      </div>
     </div>
 
     <!-- Chat Operativa -->
@@ -71,9 +109,9 @@
         <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
         <input type="text" id="username" value="Ing_NMA" style="width:120px; padding:3px;">
       </div>
-      <div id="chat-box"></div>
-      <form onsubmit="sendMsg(event)" class="chat-input-group">
-        <input type="text" id="msg" placeholder="Inserisci nota o comando..." style="flex:1;">
+      <div id="chat-box" style="height: 200px; overflow-y: auto; background: #030712; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 8px;"></div>
+      <form onsubmit="sendMsg(event)" class="chat-input-group" style="display:flex; gap:6px;">
+        <input type="text" id="msg" placeholder="Inserisci comando..." style="flex:1;">
         <button type="submit" class="btn-green">Invia</button>
       </form>
     </div>
@@ -81,15 +119,15 @@
     <!-- Certificazione ISO/UNI -->
     <div class="card">
       <h2>📜 ISO/UNI Certification Engine</h2>
-      <div style="margin-bottom:8px;">
+      <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:4px;">
         <span class="iso-badge">ISO 9001:2015</span>
         <span class="iso-badge">ISO 14001</span>
         <span class="iso-badge">ISO 45001</span>
         <span class="iso-badge">UNI 9737</span>
         <span class="iso-badge">UNI ISO 9606-1</span>
       </div>
-      <p style="font-size:11px; color:#94a3b8;">Genera reportistica di collaudo e validazione formale in formato PDF con tracciabilità dei dati sensoristici.</p>
-      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%;">📥 Scarica Report di Collaudo PDF</button>
+      <p style="font-size:11px; color:#94a3b8; margin-bottom: 12px;">Reportistica formale di collaudo e validazione con tracciabilità cifrata dei dati sensoristici.</p>
+      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%; padding: 10px;">📥 Scarica Report PDF</button>
     </div>
   </div>
 
@@ -99,141 +137,91 @@
     const socket = io();
     let currentTab = 'auto';
 
-    // Inizializzazione Grafico ECharts PRO
+    // 1. Inizializzazione Grafico ECharts con DOPPIO ASSE Y
     const chartDom = document.getElementById('echarts2d');
     const myChart = echarts.init(chartDom);
 
-    // Inizializzazione Three.js Engine
+    // 2. Inizializzazione Three.js con OrbitControls & Light Rig Industriale
     const container = document.getElementById('three-canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
-    scene.add(new THREE.AmbientLight(0x38bdf8, 0.6));
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
 
-    let activeMeshGroup = new THREE.Group();
-    scene.add(activeMeshGroup);
-    camera.position.set(0, 2, 5);
-    camera.lookAt(0, 0, 0);
+    // Luci
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambLight);
 
-    // Costruttori di Modelli 3D Procedurali Contestuali
-    function createCarModel() {
-      const group = new THREE.Group();
-      const bodyGeo = new THREE.BoxGeometry(2.2, 0.5, 1);
-      const bodyMat = new THREE.MeshPhongMaterial({ color: 0x0284c7, wireframe: false, shininess: 100 });
-      const body = new THREE.Mesh(bodyGeo, bodyMat);
-      group.add(body);
+    const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.5);
+    dirLight1.position.set(10, 20, 15);
+    dirLight1.castShadow = true;
+    scene.add(dirLight1);
 
-      const cabinGeo = new THREE.BoxGeometry(1, 0.4, 0.8);
-      const cabinMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 });
-      const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-      cabin.position.set(-0.1, 0.4, 0);
-      group.add(cabin);
+    const dirLight2 = new THREE.DirectionalLight(0x4ade80, 0.8);
+    dirLight2.position.set(-10, -10, -10);
+    scene.add(dirLight2);
 
-      const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 16);
-      const wheelMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
-      [[-0.7, -0.25, 0.5], [0.7, -0.25, 0.5], [-0.7, -0.25, -0.5], [0.7, -0.25, -0.5]].forEach(pos => {
-        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-        wheel.rotation.x = Math.PI / 2;
-        wheel.position.set(...pos);
-        group.add(wheel);
+    let activeModel = null;
+    const gltfLoader = new THREE.GLTFLoader();
+
+    // URL Modelli GLTF Industriali da Repository CDN
+    const modelURLs = {
+      cnc: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/ArtCorrectedTextures/glTF-Binary/ArtCorrectedTextures.glb',
+      tubi: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/WaterBottle/glTF-Binary/WaterBottle.glb',
+      auto: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb',
+      agri: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Buggy/glTF-Binary/Buggy.glb'
+    };
+
+    function load3DAsset(tabKey) {
+      if (activeModel) scene.remove(activeModel);
+      document.getElementById('asset-label').innerText = 'Caricamento Modello 3D GLTF...';
+
+      const url = modelURLs[tabKey];
+      gltfLoader.load(url, (gltf) => {
+        activeModel = gltf.scene;
+        
+        // Auto-Center e Bounding Box Scaling
+        const box = new THREE.Box3().setFromObject(activeModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        activeModel.position.x += (activeModel.position.x - center.x);
+        activeModel.position.y += (activeModel.position.y - center.y);
+        activeModel.position.z += (activeModel.position.z - center.z);
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2.8 / maxDim;
+        activeModel.scale.set(scale, scale, scale);
+
+        scene.add(activeModel);
+        camera.position.set(3, 2, 4);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        const labels = {
+          auto: '🚘 Asset 3D: Veicolo Industriale Telemetrico OBD-III',
+          agri: '🚜 Asset 3D: Veicolo Agricoltura 4.0 & RTK',
+          cnc: '🏭 Asset 3D: Isola Robotizzata e Centro CNC',
+          tubi: '🔧 Asset 3D: Valvola di Pressione & Condotta UNI 9737'
+        };
+        document.getElementById('asset-label').innerText = labels[tabKey];
+      }, undefined, (error) => {
+        console.error("Errore caricamento 3D:", error);
+        document.getElementById('asset-label').innerText = 'Asset 3D Offline - Visualizzazione Standby';
       });
-      return group;
-    }
-
-    function createTractorModel() {
-      const group = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 0.9), new THREE.MeshPhongMaterial({ color: 0x16a34a }));
-      body.position.y = 0.2;
-      group.add(body);
-
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 0.8), new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 }));
-      cabin.position.set(-0.3, 0.9, 0);
-      group.add(cabin);
-
-      const bigWheelGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.2, 16);
-      const smallWheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 16);
-      const wMat = new THREE.MeshPhongMaterial({ color: 0x0f172a });
-
-      [[-0.4, 0, 0.5], [-0.4, 0, -0.5]].forEach(pos => {
-        const w = new THREE.Mesh(bigWheelGeo, wMat);
-        w.rotation.x = Math.PI / 2;
-        w.position.set(...pos);
-        group.add(w);
-      });
-      [[0.5, -0.15, 0.45], [0.5, -0.15, -0.45]].forEach(pos => {
-        const w = new THREE.Mesh(smallWheelGeo, wMat);
-        w.rotation.x = Math.PI / 2;
-        w.position.set(...pos);
-        group.add(w);
-      });
-      return group;
-    }
-
-    function createRobotArmModel() {
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 0.3, 16), new THREE.MeshPhongMaterial({ color: 0x475569 }));
-      group.add(base);
-
-      const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.2, 16), new THREE.MeshPhongMaterial({ color: 0x0284c7 }));
-      arm1.position.set(0, 0.7, 0);
-      arm1.rotation.z = -0.3;
-      group.add(arm1);
-
-      const joint = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshPhongMaterial({ color: 0x38bdf8 }));
-      joint.position.set(0.3, 1.2, 0);
-      group.add(joint);
-
-      const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 16), new THREE.MeshPhongMaterial({ color: 0xe2e8f0 }));
-      arm2.position.set(0.7, 1.2, 0);
-      arm2.rotation.z = Math.PI / 2;
-      group.add(arm2);
-      return group;
-    }
-
-    function createPipelineModel() {
-      const group = new THREE.Group();
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 3.0, 32), new THREE.MeshPhongMaterial({ color: 0x38bdf8, shininess: 80 }));
-      pipe.rotation.z = Math.PI / 2;
-      group.add(pipe);
-
-      const flangeGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-      const flangeMat = new THREE.MeshPhongMaterial({ color: 0x64748b });
-      [-1.0, 0, 1.0].forEach(x => {
-        const flange = new THREE.Mesh(flangeGeo, flangeMat);
-        flange.rotation.z = Math.PI / 2;
-        flange.position.x = x;
-        group.add(flange);
-      });
-      return group;
-    }
-
-    function update3DAsset(tabKey) {
-      scene.remove(activeMeshGroup);
-      if (tabKey === 'auto') {
-        activeMeshGroup = createCarModel();
-        document.getElementById('asset-label').innerText = '🚘 Modello 3D: Autoveicolo OBD-III Telemetry';
-      } else if (tabKey === 'agri') {
-        activeMeshGroup = createTractorModel();
-        document.getElementById('asset-label').innerText = '🚜 Modello 3D: Trattore e Sensori Agricoltura 4.0';
-      } else if (tabKey === 'cnc') {
-        activeMeshGroup = createRobotArmModel();
-        document.getElementById('asset-label').innerText = '🏭 Modello 3D: Braccio Robotico CNC Multiasse';
-      } else if (tabKey === 'tubi') {
-        activeMeshGroup = createPipelineModel();
-        document.getElementById('asset-label').innerText = '🔧 Modello 3D: Condotta Gas Flangiata UNI 9737';
-      }
-      scene.add(activeMeshGroup);
     }
 
     function animateThree() {
       requestAnimationFrame(animateThree);
-      if (activeMeshGroup) activeMeshGroup.rotation.y += 0.008;
+      controls.update();
+      if (activeModel) activeModel.rotation.y += 0.003;
       renderer.render(scene, camera);
     }
     animateThree();
@@ -241,9 +229,9 @@
     // Leaflet Dark Map Setup
     const map = L.map('map').setView([45.0800, 7.6900], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup("Nodo Attivo");
+    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup("Nodo Telemetrico Attivo");
 
-    // Dati per i 4 moduli con 8 KPI ciascuno
+    // Dati dei 4 moduli con DOPPIO ASSE Y
     const tabsData = {
       auto: {
         title: '🚗 Automotive OBD-III Telemetry Platform',
@@ -255,10 +243,11 @@
           {t:'Consumo Live', v:'8.0 L/h', st:'ECO'}, {t:'Velocità', v:'124 km/h', st:'CRUISE'}
         ],
         chart: {
-          legend: ['Giri Motore (RPM)', 'Pressione Turbo (Bar x1000)'],
+          legend: ['Giri Motore (RPM)', 'Pressione Turbo (Bar)'],
           time: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25', '10:30'],
+          y1Name: 'RPM', y2Name: 'Bar',
           s1: [2100, 2800, 3950, 3200, 4100, 3800, 4200],
-          s2: [1200, 1500, 1900, 1600, 2100, 1850, 2200]
+          s2: [1.2, 1.5, 1.9, 1.6, 2.1, 1.85, 2.2]
         }
       },
       agri: {
@@ -271,10 +260,11 @@
           {t:'Precisione RTK', v:'±1.0 cm', st:'CENTIMETRICA'}, {t:'Delta Resa', v:'+18 %', st:'GROWTH'}
         ],
         chart: {
-          legend: ['Umidità del Suolo (%)', 'Indice Vettoriale NDVI (x100)'],
+          legend: ['Umidità Suolo (%)', 'Indice NDVI'],
           time: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+          y1Name: '% Umidità', y2Name: 'Indice NDVI',
           s1: [55, 50, 42, 38, 35, 40, 48],
-          s2: [80, 82, 85, 87, 86, 84, 83]
+          s2: [0.80, 0.82, 0.85, 0.87, 0.86, 0.84, 0.83]
         }
       },
       cnc: {
@@ -287,10 +277,11 @@
           {t:'Usura Utensile', v:'2.8 %', st:'BUONO'}, {t:'MTBF Stimato', v:'4,200 h', st:'AFFIDABILE'}
         ],
         chart: {
-          legend: ['Velocità Mandrino (RPM)', 'Livello Vibrazioni (g x10000)'],
+          legend: ['Velocità Mandrino (RPM)', 'Vibrazioni RMS (g)'],
           time: ['Shift 1', 'Shift 2', 'Shift 3', 'Shift 4', 'Shift 5', 'Shift 6'],
+          y1Name: 'RPM', y2Name: 'Vibrazione (g)',
           s1: [12000, 15000, 18500, 18200, 18500, 16000],
-          s2: [200, 250, 300, 280, 290, 310]
+          s2: [0.020, 0.025, 0.030, 0.028, 0.029, 0.031]
         }
       },
       tubi: {
@@ -303,10 +294,11 @@
           {t:'Estensimetro', v:'12 microE', st:'STABILE'}, {t:'Saldatura ISO', v:'100 % OK', st:'UNI 9737'}
         ],
         chart: {
-          legend: ['Pressione Rete (Bar)', 'Portata Volumetric Vol (m³/h)'],
+          legend: ['Portata Volumetrica (m³/h)', 'Pressione Rete (Bar)'],
           time: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-          s1: [12.1, 12.3, 12.8, 12.4, 12.2, 12.5, 12.2],
-          s2: [310, 280, 450, 420, 390, 480, 350]
+          y1Name: 'Portata (m³/h)', y2Name: 'Pressione (Bar)',
+          s1: [310, 280, 450, 420, 390, 480, 350],
+          s2: [12.1, 12.3, 12.8, 12.4, 12.2, 12.5, 12.2]
         }
       }
     };
@@ -314,22 +306,33 @@
     function updateChart(cData) {
       const option = {
         backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis', backgroundColor: 'rgba(13, 20, 36, 0.9)', borderColor: '#38bdf8', textStyle: { color: '#fff' } },
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(13, 20, 36, 0.95)', borderColor: '#38bdf8', textStyle: { color: '#fff' } },
         legend: { data: cData.legend, textStyle: { color: '#94a3b8' }, top: 0 },
-        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        grid: { left: '4%', right: '4%', bottom: '5%', containLabel: true },
         xAxis: { type: 'category', boundaryGap: false, data: cData.time, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
-        yAxis: { type: 'value', axisLine: { lineStyle: { color: '#334155' } }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#94a3b8' } },
+        yAxis: [
+          {
+            type: 'value', name: cData.y1Name, nameTextStyle: { color: '#38bdf8' },
+            axisLine: { lineStyle: { color: '#38bdf8' } }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
+            axisLabel: { color: '#94a3b8' }
+          },
+          {
+            type: 'value', name: cData.y2Name, nameTextStyle: { color: '#4ade80' },
+            axisLine: { lineStyle: { color: '#4ade80' } }, splitLine: { show: false },
+            axisLabel: { color: '#94a3b8' }
+          }
+        ],
         series: [
           {
-            name: cData.legend[0], type: 'line', smooth: true,
+            name: cData.legend[0], type: 'line', yAxisIndex: 0, smooth: true,
             lineStyle: { width: 3, color: '#38bdf8' },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(56, 189, 248, 0.4)' }, { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }]) },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(56, 189, 248, 0.35)' }, { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }]) },
             data: cData.s1
           },
           {
-            name: cData.legend[1], type: 'line', smooth: true,
+            name: cData.legend[1], type: 'line', yAxisIndex: 1, smooth: true,
             lineStyle: { width: 3, color: '#4ade80' },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(74, 222, 128, 0.3)' }, { offset: 1, color: 'rgba(74, 222, 128, 0.0)' }]) },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(74, 222, 128, 0.25)' }, { offset: 1, color: 'rgba(74, 222, 128, 0.0)' }]) },
             data: cData.s2
           }
         ]
@@ -352,7 +355,7 @@
       map.setView(d.gps, 13);
       marker.setLatLng(d.gps);
       updateChart(d.chart);
-      update3DAsset(k);
+      load3DAsset(k);
     };
 
     window.switchTab('auto', null);
@@ -369,7 +372,7 @@
 
     socket.on('chat-message', d => {
       const b = document.getElementById('chat-box');
-      b.innerHTML += `<div class="chat-msg"><b>${d.user}:</b> ${d.text}</div>`;
+      b.innerHTML += `<div style="margin-bottom:4px;"><b style="color:#38bdf8;">${d.user}:</b> ${d.text}</div>`;
       b.scrollTop = b.scrollHeight;
     });
 
