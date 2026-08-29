@@ -1,425 +1,552 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>N.M.A. SYSTEMS - Enterprise Suite 3D & AI Copilot</title>
-  
-  <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>N.M.A. SYSTEMS - Enterprise Telemetry & Quality Control</title>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-  <style>
-    :root {
-      --bg-main: #0b0f19;
-      --bg-card: #131c2e;
-      --bg-box: #0a1120;
-      --border-color: #1e293b;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #0284c7;
-      --accent-light: #38bdf8;
-    }
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 10px; background: #0b0f19; color: #f8fafc; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px; }
+    h1 { margin: 0; color: #38bdf8; font-size: 20px; font-weight: 800; }
+    .badge { background: #16a34a; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    
+    .selector-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .selector-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; transition: 0.2s; }
+    .selector-btn.active { background: #0284c7; color: white; border-color: #38bdf8; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .card { background: #131c2e; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; position: relative; }
+    .card h2 { font-size: 14px; margin-top: 0; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+    @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
+    .f1-box { background: #0a1120; padding: 6px; border-radius: 4px; border: 1px solid #1e293b; text-align: center; position: relative; }
+    .f1-title { font-size: 9px; color: #64748b; text-transform: uppercase; display: block; font-weight: 700; }
+    .f1-val { font-weight: 800; color: #38bdf8; font-size: 12px; font-family: monospace; }
+    .f1-status { font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 2px; margin-top: 3px; display: inline-block; }
+    .st-ok { background: #065f46; color: #34d399; }
+    .st-warn { background: #854d0e; color: #fde047; }
 
-    body.cad-theme {
-      --bg-main: #ffffff;
-      --bg-card: #f1f5f9;
-      --bg-box: #e2e8f0;
-      --border-color: #cbd5e1;
-      --text-main: #0f172a;
-      --text-muted: #475569;
-      --accent: #0284c7;
-      --accent-light: #0369a1;
-    }
+    #map { height: 180px; border-radius: 6px; }
+    #chat-box { height: 210px; overflow-y: auto; background: #0a1120; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
+    .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: #1e293b; max-width: 85%; word-break: break-word; }
+    .chat-msg.me { background: #0369a1; margin-left: auto; }
+    
+    .chat-input-group { display: flex; gap: 4px; }
+    input[type="text"], select { padding: 6px 10px; background: #0a1120; border: 1px solid #1e293b; color: #fff; border-radius: 4px; font-size: 12px; }
+    button { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .btn-green { background: #16a34a; }
 
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 10px; background: var(--bg-main); color: var(--text-main); transition: background 0.3s, color 0.3s; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
-    h1 { margin: 0; color: var(--accent-light); font-size: 20px; font-weight: 800; }
-    
-    .top-actions { display: flex; gap: 6px; align-items: center; }
-    .badge { background: #16a34a; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-    
-    .selector-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-    .selector-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; }
-    .selector-btn.active { background: var(--accent); color: white; border-color: var(--accent-light); }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px; }
-    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; position: relative; }
-    .card h2 { font-size: 13px; margin-top: 0; color: var(--text-muted); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-    
-    .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
-    @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
-    .f1-box { background: var(--bg-box); padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); text-align: center; }
-    .f1-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; }
-    .f1-val { font-weight: 800; color: var(--accent-light); font-size: 12px; font-family: monospace; }
-    .f1-status { font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 2px; margin-top: 3px; display: inline-block; }
-    .st-ok { background: #065f46; color: #34d399; }
-    .st-warn { background: #854d0e; color: #fde047; }
-    .st-crit { background: #991b1b; color: #fca5a5; }
+    .iso-badge { display: inline-block; background: #1e293b; color: #38bdf8; font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-right: 3px; margin-bottom:3px; font-weight: bold; }
+    .pdf-actions { display: flex; gap: 6px; margin-top: 6px; }
 
-    #three-container { width: 100%; height: 180px; background: #000; border-radius: 6px; position: relative; overflow: hidden; }
-    #map { height: 180px; border-radius: 6px; }
-    #chat-box { height: 160px; overflow-y: auto; background: var(--bg-box); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; }
-    .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: var(--border-color); max-width: 85%; }
-    .chat-msg.me { background: var(--accent); color: white; margin-left: auto; }
-    
-    .chat-input-group { display: flex; gap: 4px; }
-    input[type="text"], select { padding: 6px 10px; background: var(--bg-box); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-size: 12px; }
-    button { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
-    .btn-green { background: #16a34a; }
-    .btn-red { background: #dc2626; }
-
-    #sig-canvas { background: #ffffff; border: 1px solid var(--border-color); border-radius: 4px; cursor: crosshair; touch-action: none; width: 100%; height: 70px; }
-    .ai-copilot { background: rgba(2, 132, 199, 0.1); border: 1px solid var(--accent); padding: 8px; border-radius: 6px; font-size: 11px; color: var(--accent-light); margin-top: 6px; }
-  </style>
+    #chart-modal { display: none; position: absolute; top: 40px; left: 12px; right: 12px; background: #0f172a; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
+  </style>
 </head>
 <body>
 
-  <header>
-    <div>
-      <h1>N.M.A. SYSTEMS</h1>
-      <small style="color: var(--text-muted);">Enterprise 3D Telemetry & AI Copilot Suite</small>
-    </div>
-    <div class="top-actions">
-      <button onclick="toggleTheme()" style="background:#475569;">☀️ CAD Theme</button>
-      <span class="badge" id="online-status">ONLINE</span>
-    </div>
-  </header>
+  <header>
+    <div>
+      <h1>N.M.A. SYSTEMS</h1>
+      <small style="color: #64748b;">Enterprise Telemetry & Quality Control Suite</small>
+    </div>
+    <div>
+      <button onclick="requestNotifPermission()" style="font-size:10px; padding:4px 8px; background:#334155;">🔔 Push Notifiche</button>
+      <span class="badge" id="online-status">ONLINE</span>
+    </div>
+  </header>
 
-  <div class="selector-bar">
-    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Tubazioni Gas (Pipeline)</button>
-    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Automation</button>
-    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura Precisione</button>
-    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Fleet</button>
-  </div>
+  <div class="selector-bar">
+    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Tubazioni Gas (Pipeline)</button>
+    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Automation</button>
+    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura Precisione</button>
+    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Fleet</button>
+  </div>
 
-  <div class="grid">
-    <div class="card" style="grid-column: span 2;">
-      <h2 id="module-title">
-        <span>🚗 Automotive Telemetry & Digital Twin 3D</span>
-        <div>
-          <button class="btn-red" onclick="triggerFaultInjection()">⚠️ Simula Anomalia Critical</button>
-          <button onclick="resetMetrics()" style="background:#334155;">🔄 Resetta</button>
-        </div>
-      </h2>
+  <div class="grid">
+    <div class="card" style="grid-column: span 2;">
+      <h2 id="module-title">🚗 Automotive Telemetry OBD-III</h2>
+      <div class="f1-grid" id="metrics-container"></div>
+      
+      <div style="position:relative;">
+        <canvas id="liveChart" height="90"></canvas>
+        <div id="chart-modal">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:4px; margin-bottom:8px;">
+            <strong id="modal-time" style="color:#38bdf8; font-size:13px;">Dati Orario: 10:03</strong>
+            <button onclick="closeChartModal()" style="padding:2px 6px; font-size:10px; background:#dc2626;">✕ Chiudi</button>
+          </div>
+          <div id="modal-content" style="font-size:11px; color:#cbd5e1; display:grid; grid-template-columns: repeat(2, 1fr); gap:6px;"></div>
+        </div>
+      </div>
+    </div>
 
-      <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
-        <div>
-          <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">DIGITAL TWIN 3D (INTERATTIVO)</div>
-          <div id="three-container"></div>
-        </div>
-        <div>
-          <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">ANALISI TELEMETRICA LIVE</div>
-          <canvas id="liveChart" height="150"></canvas>
-        </div>
-      </div>
+    <div class="card">
+      <h2>🌍 GPS & Localizzazione Rete</h2>
+      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Flotta Test Torino</span></div>
+        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" id="dyn-latency" style="color:#4ade80;">12 ms</span></div>
+        <div class="f1-box"><span class="f1-title">Segnale</span><span class="f1-val" id="dyn-signal" style="color:#4ade80;">5G RTK</span></div>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
 
-      <div class="f1-grid" id="metrics-container" style="margin-top:10px;"></div>
+  <div class="grid">
+    <div class="card">
+      <h2>🎬 Simulazione Tecnica & Assistenza Sensori</h2>
+      <select id="videoSelect" onchange="changeTutorialVideo()" style="width:100%; margin-bottom:8px;">
+        <option value="sim1">Simulazione 1: Saldatura Tubazioni PE / Acciaio (UNI 9737 / ISO 12176)</option>
+        <option value="sim2">Simulazione 2: Calibrazione Sensori Telemetrici & RTK 5G</option>
+      </select>
+      
+      <div id="tutorial-container" style="width:100%; height:140px; background:#0a1120; border-radius:6px; overflow:hidden; position:relative;">
+        <canvas id="sensorCanvas" width="320" height="140" style="width:100%; height:100%; background:#070b12;"></canvas>
+      </div>
+    </div>
 
-      <div class="ai-copilot" id="ai-status">
-        🤖 <b>AI COPILOT:</b> Sistema in stato di operatività nominale. Tolleranze ISO/UNI rispettate.
-      </div>
-    </div>
+    <div class="card">
+      <h2>💬 Chat Tecnica & Condivisione File</h2>
+      <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
+        <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
+        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:120px; padding:3px;">
+      </div>
 
-    <div class="card">
-      <h2>🌍 GPS & Localizzazione Rete RTK</h2>
-      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Flotta Test Torino</span></div>
-        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" id="dyn-latency" style="color:#4ade80;">12 ms</span></div>
-        <div class="f1-box"><span class="f1-title">Segnale</span><span class="f1-val" id="dyn-signal" style="color:#4ade80;">5G RTK</span></div>
-      </div>
-      <div id="map"></div>
-    </div>
-  </div>
+      <div id="chat-box"></div>
+      <form onsubmit="sendMsg(event)" class="chat-input-group">
+        <input type="text" id="msg" placeholder="Scrivi un messaggio..." style="flex:1;">
+        <input type="file" id="photo-input" accept="image/*,application/pdf" style="display:none" onchange="sendFile(this)">
+        <button type="button" onclick="document.getElementById('photo-input').click()">📎</button>
+        <button type="submit" class="btn-green">Invia</button>
+      </form>
+    </div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>💬 Chat Tecnica & Condivisione File</h2>
-      <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
-        <span style="font-size:11px; color:var(--text-muted);">Operatore:</span>
-        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:120px; padding:3px;">
-      </div>
+    <div class="card">
+      <h2>📄 Report PDF Tecnico & Schede ISO/UNI</h2>
+      <div style="margin-bottom:8px;">
+        <span class="iso-badge">ISO 9001:2015</span>
+        <span class="iso-badge">ISO 14001:2015</span>
+        <span class="iso-badge">ISO 45001:2018</span>
+        <span class="iso-badge">ISO 3834-2</span>
+        <span class="iso-badge">UNI 9737</span>
+        <span class="iso-badge">UNI ISO 9606-1</span>
+      </div>
+      <p style="font-size:11px; color:#94a3b8; margin:0 0 10px 0;">Genera il report PDF ufficiale con intestazione aziendale N.M.A. SYSTEMS, tabella parametri, conformità ISO/UNI e blocco firma.</p>
+      <div class="pdf-actions">
+        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1;">📥 Scarica PDF Dinamico</button>
+        <button onclick="sharePdfToChat()" style="flex:1;">💬 Invia in Chat</button>
+      </div>
+    </div>
+  </div>
 
-      <div id="chat-box"></div>
-      <form onsubmit="sendMsg(event)" class="chat-input-group">
-        <input type="text" id="msg" placeholder="Scrivi un messaggio..." style="flex:1;">
-        <input type="file" id="photo-input" accept="image/*,application/pdf" style="display:none" onchange="sendFile(this)">
-        <button type="button" onclick="document.getElementById('photo-input').click()">📎</button>
-        <button type="submit" class="btn-green">Invia</button>
-      </form>
-    </div>
+  <script>
+    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
 
-    <div class="card">
-      <h2>✍️ Firma Digitale & Generatore Report PDF</h2>
-      <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">FIRMA DIGITALE OPERATORE (DISEGNA CON MOUSE/TOUCH):</div>
-      <canvas id="sig-canvas" width="300" height="70"></canvas>
-      <div style="display:flex; justify-content:space-between; margin-top:4px;">
-        <button onclick="clearSignature()" style="font-size:9px; background:#475569; padding:2px 6px;">🗑️ Pulisci Firma</button>
-        <span style="font-size:9px; color:var(--text-muted);">ISO 9001 / UNI 9737 Qualified</span>
-      </div>
+    let currentActiveTab = 'auto';
+    let gpsInterval = null;
+    let animId = null;
 
-      <div style="display:flex; gap:6px; margin-top:10px;">
-        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1;">📥 Scarica PDF Certificato</button>
-        <button onclick="sharePdfToChat()" style="flex:1;">💬 Invia in Chat</button>
-      </div>
-    </div>
-  </div>
+    function updateUsername() {
+      const u = document.getElementById('username').value || 'Operatore';
+      socket.emit('register-user', u);
+    }
+    socket.on('connect', () => { updateUsername(); });
 
-  <script>
-    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
-    let currentActiveTab = 'auto';
+    function requestNotifPermission() {
+      if ("Notification" in window) {
+        Notification.requestPermission().then(p => {
+          if (p === "granted") alert("Notifiche Push Attivate!");
+        });
+      }
+    }
 
-    function toggleTheme() {
-      document.body.classList.toggle('cad-theme');
-    }
+    function triggerNotif(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body: body, icon: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png' });
+      }
+    }
 
-    function updateUsername() {
-      const u = document.getElementById('username').value || 'Operatore';
-      socket.emit('register-user', u);
-    }
-    socket.on('connect', () => { updateUsername(); });
+    // Metriche avanzate con stato e range di tolleranza ISO/UNI
+    const tabsData = {
+      tubi: {
+        title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
+        metrics: [
+          { t: 'Pressione Pe', v: '12.4 Bar', st: 'NOMINALE', ok: true },
+          { t: 'Portata Qv', v: '420 m³/h', st: 'NOMINALE', ok: true },
+          { t: 'Portata Qm', v: '310 kg/h', st: 'NOMINALE', ok: true },
+          { t: 'Delta P', v: '0.01 Bar', st: 'OTTIMALE', ok: true },
+          { t: 'Temp Gas', v: '14.2 °C', st: 'NOMINALE', ok: true },
+          { t: 'Acustica Perdite', v: '0.0 dB', st: 'ZERO PERDITE', ok: true },
+          { t: 'Pot. Catodico', v: '-1.15 V', st: 'PROTEZIONE OK', ok: true },
+          { t: 'Densità Gas', v: '0.72 kg/m³', st: 'NOMINALE', ok: true },
+          { t: 'Posiz. Valvola', v: '100 %', st: 'APERTA', ok: true },
+          { t: 'Estensimetro', v: '12 µε', st: 'STABILE', ok: true },
+          { t: 'Saldatura ISO', v: '100 % OK', st: 'UNI 9737', ok: true },
+          { t: 'Margine Sicurezza', v: '240 %', st: 'HIGH SAFETY', ok: true }
+        ]
+      },
+      cnc: {
+        title: '⚙️ CNC & Industrial Automation Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
+        metrics: [
+          { t: 'OEE Total', v: '97.2 %', st: 'ECCELLENTE', ok: true },
+          { t: 'RPM Mandrino', v: '18,500', st: 'HIGH SPEED', ok: true },
+          { t: 'Coppia Nm', v: '42.1 Nm', st: 'NOMINALE', ok: true },
+          { t: 'Cos φ Potenza', v: '0.95', st: 'EFFICEINTE', ok: true },
+          { t: 'Vibrazioni RMS', v: '0.03 g', st: 'BASSE', ok: true },
+          { t: 'Temp Liquido', v: '20.8 °C', st: 'STABILE', ok: true },
+          { t: 'Avanzamento', v: '1,250 mm/m', st: 'NOMINALE', ok: true },
+          { t: 'Usura Utensile', v: '2.8 %', st: 'BUONO', ok: true },
+          { t: 'THD Armoniche', v: '1.1 %', st: 'CONFORME', ok: true },
+          { t: 'Pressione Aria', v: '6.4 Bar', st: 'NOMINALE', ok: true },
+          { t: 'Tempo Ciclo', v: '41.2 s', st: 'OTTIMIZZATO', ok: true },
+          { t: 'MTBF stimato', v: '4,200 h', st: 'AFFIDABILE', ok: true }
+        ]
+      },
+      agri: {
+        title: '🚜 Agricoltura di Precisione Telemetry', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
+        metrics: [
+          { t: 'Umidità Suolo', v: '42 %', st: 'OTTIMALE', ok: true },
+          { t: 'Indice NDVI', v: '0.85', st: 'HIGH VIGOR', ok: true },
+          { t: 'RPM PTO', v: '540 RPM', st: 'STANDARD', ok: true },
+          { t: 'Press. Idraulica', v: '185 Bar', st: 'NOMINALE', ok: true },
+          { t: 'ET0 Evapo', v: '2.6 mm/g', st: 'BILANCIATO', ok: true },
+          { t: 'Compattazione', v: '1.1 MPa', st: 'NORMALE', ok: true },
+          { t: 'Resa Oraria', v: '4.5 Ha/h', st: 'ALTA METRICA', ok: true },
+          { t: 'Consumo L/h', v: '13.8 L/h', st: 'ECO MODE', ok: true },
+          { t: 'Slittamento', v: '1.8 %', st: 'MINIMO', ok: true },
+          { t: 'Sforzo Gancio', v: '11.5 kN', st: 'REGOLARE', ok: true },
+          { t: 'Precisione RTK', v: '±1.0 cm', st: 'CENTIMETRICA', ok: true },
+          { t: 'Delta Resa', v: '+18 %', st: 'GROWTH', ok: true }
+        ]
+      },
+      auto: {
+        title: '🚗 Automotive Telemetry OBD-III', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        metrics: [
+          { t: 'Regime Motore', v: '3,950 RPM', st: 'NOMINALE', ok: true },
+          { t: 'Press. Turbo', v: '1.90 Bar', st: 'BOOST OK', ok: true },
+          { t: 'Temp Olio', v: '96 °C', st: 'OTTIMALE', ok: true },
+          { t: 'AFR Ratio', v: '14.7:1', st: 'STECHIO', ok: true },
+          { t: 'G-Force Lat', v: '1.18 G', st: 'SPORT', ok: true },
+          { t: 'Temp Freni', v: '295 °C', st: 'IN RANGE', ok: true },
+          { t: 'Flusso Carburante', v: '8.0 L/h', st: 'EFFICEINTE', ok: true },
+          { t: 'Stato Carica SoC', v: '98 %', st: 'CARICO', ok: true },
+          { t: 'Farfalla %', v: '82 %', st: 'OPEN', ok: true },
+          { t: 'Temp EGT Gas', v: '675 °C', st: 'SICURO', ok: true },
+          { t: 'Codici DTC', v: '0 Errore', st: 'CLEAN', ok: true },
+          { t: 'Velocità', v: '124 km/h', st: 'CRUISE', ok: true }
+        ]
+      }
+    };
 
-    function playAudioAlarm() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-      } catch(e) {}
-    }
+    function switchTab(k, evt) {
+      currentActiveTab = k;
+      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+      if(evt) evt.target.classList.add('active');
+      const d = tabsData[k];
+      document.getElementById('module-title').innerText = d.title;
+      document.getElementById('gps-label').innerText = d.label;
+      const c = document.getElementById('metrics-container');
+      c.innerHTML = '';
+      d.metrics.forEach(m => {
+        c.innerHTML += `
+          <div class="f1-box">
+            <span class="f1-title">${m.t}</span>
+            <span class="f1-val">${m.v}</span>
+            <span class="f1-status ${m.ok ? 'st-ok' : 'st-warn'}">${m.st}</span>
+          </div>`;
+      });
+      map.setView(d.gps, 13);
+      marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
+    }
 
-    const sigCanvas = document.getElementById('sig-canvas');
-    const sigCtx = sigCanvas.getContext('2d');
-    let isDrawing = false;
+    let currentLat = 45.0800, currentLng = 7.6900;
+    const map = L.map('map', { preferCanvas: true }).setView([currentLat, currentLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+    const marker = L.marker([currentLat, currentLng]).addTo(map).bindPopup('Flotta Test Torino').openPopup();
 
-    function getPos(e) {
-      const rect = sigCanvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-    function startDrawing(e) { isDrawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }
-    function draw(e) { if (!isDrawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.strokeStyle = '#0284c7'; sigCtx.lineWidth = 2; sigCtx.stroke(); }
-    function stopDrawing() { isDrawing = false; }
+    switchTab('auto', null);
 
-    sigCanvas.addEventListener('mousedown', startDrawing);
-    sigCanvas.addEventListener('mousemove', draw);
-    sigCanvas.addEventListener('mouseup', stopDrawing);
-    sigCanvas.addEventListener('touchstart', startDrawing);
-    sigCanvas.addEventListener('touchmove', draw);
-    sigCanvas.addEventListener('touchend', stopDrawing);
+    if (gpsInterval) clearInterval(gpsInterval);
+    gpsInterval = setInterval(() => {
+      currentLat += (Math.random() - 0.5) * 0.0002;
+      currentLng += (Math.random() - 0.5) * 0.0002;
+      marker.setLatLng([currentLat, currentLng]);
+      document.getElementById('dyn-latency').innerText = `${Math.floor(8 + Math.random() * 6)} ms`;
+      document.getElementById('dyn-signal').innerText = Math.random() > 0.1 ? '5G RTK' : '4G FIX';
+    }, 3000);
 
-    function clearSignature() {
-      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    }
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    const timeLabels = ['10:00', '10:03', '10:05', '10:10', '10:15', '10:20', '10:25'];
+    const timeValues = [3800, 3860, 3850, 3950, 3900, 4000, 3950];
 
-    const container = document.getElementById('three-container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: [{ label: 'Valore Telemetrico', data: timeValues, borderColor: '#38bdf8', tension: 0.3, pointRadius: 5, pointHoverRadius: 8, pointBackgroundColor: '#0284c7' }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { grid: { color: '#1e293b' } }, x: { grid: { color: '#1e293b' } } },
+        onClick: (e, elements) => {
+          if (elements.length > 0) {
+            const idx = elements[0].index;
+            showChartDetails(timeLabels[idx], timeValues[idx]);
+          }
+        }
+      }
+    });
 
-    const geometry = new THREE.CylinderGeometry(1.2, 1.2, 4, 32);
-    const material = new THREE.MeshPhongMaterial({ color: 0x0284c7, wireframe: false, shininess: 100 });
-    const digitalTwinMesh = new THREE.Mesh(geometry, material);
-    digitalTwinMesh.rotation.z = Math.PI / 2;
-    scene.add(digitalTwinMesh);
+    function showChartDetails(time, val) {
+      document.getElementById('modal-time').innerText = `📊 Dati Telemetrici alle ore ${time}`;
+      const activeData = tabsData[currentActiveTab];
+      document.getElementById('modal-content').innerHTML = `
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Valore Campionato:</b> ${val} units</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Stato Tolleranza:</b> NOMINALE</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Modulo Attivo:</b> ${activeData.title.split(' ')[1]}</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Campionamento RTK:</b> 100 Hz</div>
+      `;
+      document.getElementById('chart-modal').style.display = 'block';
+    }
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(5, 5, 5);
-    scene.add(dirLight);
-    scene.add(new THREE.AmbientLight(0x333333));
-    camera.position.z = 5.5;
+    function closeChartModal() {
+      document.getElementById('chart-modal').style.display = 'none';
+    }
 
-    function animate3D() {
-      requestAnimationFrame(animate3D);
-      digitalTwinMesh.rotation.y += 0.01;
-      renderer.render(scene, camera);
-    }
-    animate3D();
+    // Canvas Simulations
+    function changeTutorialVideo() {
+      const select = document.getElementById('videoSelect');
+      if (select.value === 'sim2') startSensorCanvasSimulation();
+      else startWeldingCanvasSimulation();
+    }
 
-    const tabsData = {
-      tubi: {
-        title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
-        metrics: [
-          { t: 'Pressione Pe', v: '12.4 Bar', st: 'NOMINALE', ok: true },
-          { t: 'Portata Qv', v: '420 m³/h', st: 'NOMINALE', ok: true },
-          { t: 'Delta P', v: '0.01 Bar', st: 'OTTIMALE', ok: true },
-          { t: 'Saldatura ISO', v: '100 % OK', st: 'UNI 9737', ok: true }
-        ]
-      },
-      cnc: {
-        title: '⚙️ CNC & Industrial Automation Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
-        metrics: [
-          { t: 'OEE Total', v: '97.2 %', st: 'ECCELLENTE', ok: true },
-          { t: 'RPM Mandrino', v: '18,500', st: 'HIGH SPEED', ok: true },
-          { t: 'Vibrazioni RMS', v: '0.03 g', st: 'BASSE', ok: true },
-          { t: 'Temp Liquido', v: '20.8 °C', st: 'STABILE', ok: true }
-        ]
-      },
-      agri: {
-        title: '🚜 Agricoltura di Precisione Telemetry', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
-        metrics: [
-          { t: 'Umidità Suolo', v: '42 %', st: 'OTTIMALE', ok: true },
-          { t: 'Indice NDVI', v: '0.85', st: 'HIGH VIGOR', ok: true },
-          { t: 'Precisione RTK', v: '±1.0 cm', st: 'CENTIMETRICA', ok: true },
-          { t: 'Consumo L/h', v: '13.8 L/h', st: 'ECO MODE', ok: true }
-        ]
-      },
-      auto: {
-        title: '🚗 Automotive Telemetry OBD-III', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
-        metrics: [
-          { t: 'Regime Motore', v: '3,950 RPM', st: 'NOMINALE', ok: true },
-          { t: 'Press. Turbo', v: '1.90 Bar', st: 'BOOST OK', ok: true },
-          { t: 'Temp Olio', v: '96 °C', st: 'OTTIMALE', ok: true },
-          { t: 'Velocità', v: '124 km/h', st: 'CRUISE', ok: true }
-        ]
-      }
-    };
+    function startWeldingCanvasSimulation() {
+      if (animId) cancelAnimationFrame(animId);
+      const cvs = document.getElementById('sensorCanvas');
+      const c = cvs.getContext('2d');
+      let progress = 0;
 
-    function switchTab(k, evt) {
-      currentActiveTab = k;
-      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-      if(evt) evt.target.classList.add('active');
-      const d = tabsData[k];
-      document.getElementById('module-title').querySelector('span').innerText = d.title;
-      document.getElementById('gps-label').innerText = d.label;
-      renderMetrics(d.metrics);
-      map.setView(d.gps, 13);
-      marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
-      resetMetrics();
-    }
+      function draw() {
+        c.fillStyle = '#070b12'; c.fillRect(0, 0, cvs.width, cvs.height);
+        c.fillStyle = '#334155'; c.fillRect(20, 50, 280, 20);
+        c.fillStyle = '#1e293b'; c.fillRect(20, 70, 280, 20);
+        
+        let xPos = 40 + (progress % 240);
+        c.fillStyle = '#0284c7'; c.fillRect(40, 68, progress % 240, 4);
+        c.fillStyle = '#38bdf8'; c.beginPath(); c.arc(xPos, 70, 6 + Math.random()*3, 0, Math.PI*2); c.fill();
+        c.fillStyle = '#f59e0b'; c.beginPath(); c.arc(xPos, 70, 3, 0, Math.PI*2); c.fill();
 
-    function renderMetrics(metrics) {
-      const c = document.getElementById('metrics-container');
-      c.innerHTML = '';
-      metrics.forEach(m => {
-        let stClass = 'st-ok';
-        if (m.st.includes('WARNING')) stClass = 'st-warn';
-        if (m.st.includes('CRITICO')) stClass = 'st-crit';
-        c.innerHTML += `
-          <div class="f1-box">
-            <span class="f1-title">${m.t}</span>
-            <span class="f1-val">${m.v}</span>
-            <span class="f1-status ${stClass}">${m.st}</span>
-          </div>`;
-      });
-    }
+        c.fillStyle = '#38bdf8'; c.font = '10px monospace';
+        c.fillText('SIMULAZIONE SALDATURA ELETTROFUSIONE (UNI 9737)', 10, 20);
+        c.fillStyle = '#4ade80';
+        c.fillText(`TEMP GIUNTO: ${(210 + Math.sin(progress*0.1)*5).toFixed(1)} °C`, 10, 115);
+        c.fillText(`PRESSIONE FUSIONE: ${(2.2 + Math.cos(progress*0.1)*0.1).toFixed(2)} Bar`, 10, 130);
 
-    function triggerFaultInjection() {
-      playAudioAlarm();
-      digitalTwinMesh.material.color.setHex(0xef4444);
-      const activeData = tabsData[currentActiveTab];
-      activeData.metrics[0].v = '99.9 OVER';
-      activeData.metrics[0].st = 'CRITICO High P';
-      activeData.metrics[1].st = 'WARNING Delta';
-      renderMetrics(activeData.metrics);
-      document.getElementById('ai-status').innerHTML = '⚠️ <b>AI COPILOT:</b> Rilevata anomalia critica di pressione/sovraregime! Interruzione di sicurezza raccomandata.';
-    }
+        progress += 0.8;
+        animId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
 
-    function resetMetrics() {
-      digitalTwinMesh.material.color.setHex(0x0284c7);
-      document.getElementById('ai-status').innerHTML = '🤖 <b>AI COPILOT:</b> Sistema in stato di operatività nominale. Tolleranze ISO/UNI rispettate.';
-      const d = tabsData[currentActiveTab];
-      renderMetrics(d.metrics);
-    }
+    function startSensorCanvasSimulation() {
+      if (animId) cancelAnimationFrame(animId);
+      const cvs = document.getElementById('sensorCanvas');
+      const c = cvs.getContext('2d');
+      let angle = 0;
 
-    const map = L.map('map', { preferCanvas: true }).setView([45.0800, 7.6900], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
-    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup('Flotta Test Torino').openPopup();
+      function draw() {
+        c.fillStyle = '#070b12'; c.fillRect(0, 0, cvs.width, cvs.height);
+        c.strokeStyle = '#0284c7'; c.lineWidth = 1;
+        c.beginPath(); c.arc(160, 70, 45, 0, Math.PI*2); c.stroke();
+        c.strokeStyle = '#38bdf8'; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(160, 70);
+        c.lineTo(160 + 45 * Math.cos(angle), 70 + 45 * Math.sin(angle)); c.stroke();
+        c.fillStyle = '#4ade80'; c.font = '10px monospace';
+        c.fillText('CALIBRAZIONE RTK 5G IN CORSO...', 10, 125);
+        angle += 0.04; animId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+    startWeldingCanvasSimulation();
 
-    const ctx = document.getElementById('liveChart').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['10:00', '10:05', '10:10', '10:15', '10:20'],
-        datasets: [{ label: 'Telemetria Hz', data: [3800, 3860, 3950, 3900, 3950], borderColor: '#0284c7', tension: 0.3 }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
-    });
+    // Chat Logic
+    function sendMsg(e) {
+      if(e) e.preventDefault();
+      const input = document.getElementById('msg');
+      const user = document.getElementById('username').value || 'Operatore';
+      if (input.value.trim()) {
+        socket.emit('chat-message', { user, text: input.value.trim() });
+        input.value = '';
+      }
+    }
 
-    function sendMsg(e) {
-      if(e) e.preventDefault();
-      const input = document.getElementById('msg');
-      const user = document.getElementById('username').value || 'Operatore';
-      if (input.value.trim()) {
-        socket.emit('chat-message', { user, text: input.value.trim() });
-        input.value = '';
-      }
-    }
+    socket.on('chat-message', d => {
+      const u = d.user || 'Anonimo';
+      const me = u === (document.getElementById('username').value || 'Operatore');
+      if (!me) triggerNotif(`Messaggio da ${u}`, d.text || 'Nuovo allegato');
+      const b = document.getElementById('chat-box');
+      let content = '';
+      if (d.text) content += `<div>${d.text}</div>`;
+      if (d.file) content += `<div style="margin-top:4px;">📎 Allegato: <a href="${d.file}" download="${d.fileName || 'file'}" style="color:#38bdf8; font-weight:bold;">${d.fileName || 'Scarica Allegato'}</a></div>`;
+      b.innerHTML += `<div class="chat-msg ${me ? 'me' : ''}"><b>${u}:</b> ${content}</div>`;
+      if (b.children.length > 40) b.removeChild(b.firstChild);
+      b.scrollTop = b.scrollHeight;
+    });
 
-    socket.on('chat-message', d => {
-      const u = d.user || 'Anonimo';
-      const me = u === (document.getElementById('username').value || 'Operatore');
-      const b = document.getElementById('chat-box');
-      let content = '';
-      if (d.text) content += `<div>${d.text}</div>`;
-      if (d.file) content += `<div style="margin-top:4px;">📎 Allegato: <a href="${d.file}" download="${d.fileName || 'file'}" style="color:#38bdf8; font-weight:bold;">${d.fileName || 'Scarica Allegato'}</a></div>`;
-      b.innerHTML += `<div class="chat-msg ${me ? 'me' : ''}"><b>${u}:</b> ${content}</div>`;
-      b.scrollTop = b.scrollHeight;
-    });
+    // Motore PDF Certificato Aziendale N.M.A. Systems
+    function getPDFDocDefinition() {
+      const activeData = tabsData[currentActiveTab];
+      const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
+      
+      const tableRows = [
+        [
+          { text: 'PARAMETRO DI MISURA', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
+          { text: 'VALORE RILEVATO', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
+          { text: 'STATO DI CONFORMITÀ', bold: true, fillColor: '#0f172a', color: '#38bdf8' }
+        ]
+      ];
+      
+      activeData.metrics.forEach(m => {
+        tableRows.push([
+          { text: m.t, fontSize: 10 },
+          { text: m.v, bold: true, fontSize: 10 },
+          { text: m.st, color: m.ok ? '#16a34a' : '#d97706', bold: true, fontSize: 9 }
+        ]);
+      });
 
-    function downloadGeneratedPDF() {
-      const activeData = tabsData[currentActiveTab];
-      const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
-      const sigDataUrl = sigCanvas.toDataURL();
+      return {
+        pageSize: 'A4',
+        pageMargins: [35, 40, 35, 40],
+        content: [
+          // Header Aziendale
+          {
+            columns: [
+              {
+                text: 'N.M.A. SYSTEMS & ENGINEERING\n' +
+                      'Precision Telemetry & Quality Assurance\n' +
+                      'Torino - San Benigno Canavese (TO)',
+                fontSize: 9,
+                color: '#475569'
+              },
+              {
+                text: 'CERTIFICATO DI VERIFICA TECNICA\n' +
+                      `Data: ${new Date().toLocaleDateString('it-IT')}\n` +
+                      `Ref: NMA-REP-${Math.floor(100000 + Math.random() * 900000)}`,
+                alignment: 'right',
+                fontSize: 9,
+                bold: true,
+                color: '#0284c7'
+              }
+            ]
+          },
+          { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
+          { text: '\n' },
 
-      const docDef = {
-        pageSize: 'A4',
-        pageMargins: [35, 40, 35, 40],
-        content: [
-          {
-            columns: [
-              { text: 'N.M.A. SYSTEMS & ENGINEERING\nPrecision Telemetry & Quality Assurance', fontSize: 9, color: '#475569' },
-              { text: `CERTIFICATO UFFICIALE NMA-REP-${Math.floor(100000 + Math.random() * 900000)}\nData: ${new Date().toLocaleDateString('it-IT')}`, alignment: 'right', fontSize: 9, bold: true, color: '#0284c7' }
-            ]
-          },
-          { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
-          { text: '\n' },
-          { text: `RAPPORTO TELEMETRICO: ${activeData.title.toUpperCase()}`, fontSize: 13, bold: true, color: '#0f172a' },
-          { text: `Operatore: ${operatorName} | Nodo: ${activeData.label}`, fontSize: 9, color: '#475569', margin: [0, 0, 0, 10] },
-          { text: 'Conformità Normativa ISO 9001 / ISO 3834-2 / UNI 9737', fontSize: 10, bold: true, color: '#0284c7' },
-          { text: '\n' },
-          {
-            columns: [
-              { text: 'Firma Operatore Qualificato:', fontSize: 9, margin: [0, 20, 0, 0] },
-              { image: sigDataUrl, width: 140, alignment: 'right' }
-            ]
-          }
-        ]
-      };
-      pdfMake.createPdf(docDef).download(`Report_Certificato_NMA_${currentActiveTab}.pdf`);
-    }
+          // Titolo Modulo
+          { text: `RAPPORTO TECNICO DI TELEMETRIA: ${activeData.title.toUpperCase()}`, style: 'header' },
+          { text: `Operatore Responsabile: ${operatorName} | Nodo GPS: ${activeData.label}`, style: 'subheader' },
+          { text: '\n' },
 
-    function sharePdfToChat() {
-      downloadGeneratedPDF();
-    }
+          // Quadro Normativo
+          { text: 'Normative di Riferimento Aziendali & Standard di Qualità:', style: 'sectionHeader' },
+          {
+            table: {
+              widths: ['*'],
+              body: [[
+                {
+                  fillColor: '#f8fafc',
+                  border: [true, true, true, true],
+                  borderColor: '#cbd5e1',
+                  text: '• ISO 9001:2015 (Gestione Qualità)\n' +
+                        '• ISO 14001:2015 (Gestione Ambientale)\n' +
+                        '• ISO 45001:2018 (Salute e Sicurezza sul Lavoro)\n' +
+                        '• ISO 3834-2 (Qualità Saldatura dei Metalli)\n' +
+                        '• UNI 9737 / UNI ISO 9606-1 (Qualificazione Operatori e Saldatori)',
+                  fontSize: 9,
+                  color: '#334155'
+                }
+              ]]
+            }
+          },
+          { text: '\n' },
 
-    function sendFile(input) {
-      const user = document.getElementById('username').value || 'Operatore';
-      const file = input.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) { socket.emit('chat-message', { user, file: e.target.result, fileName: file.name }); };
-        reader.readAsDataURL(file);
-      }
-    }
+          // Tabella Dati Telemetrici
+          { text: 'Rilevazioni Telemetriche in Tempo Reale:', style: 'sectionHeader' },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', '*', '*'],
+              body: tableRows
+            },
+            layout: 'LightHorizontalLines'
+          },
+          { text: '\n' },
 
-    switchTab('auto', null);
-  </script>
+          // Esito Collaudo
+          { text: 'Esito Collaudo Telemetrico:', style: 'sectionHeader' },
+          {
+            text: '✔ CONFORME AL 100% - Tutti i parametri acquisiti rientrano nei range di tolleranza previsti dal disciplinare di qualifica ISO/UNI.',
+            color: '#16a34a',
+            bold: true,
+            fontSize: 10
+          },
+          { text: '\n\n' },
+
+          // Blocco Firma
+          {
+            columns: [
+              {
+                text: 'Firma Operatore Telemetria\n\n_______________________\n' + operatorName,
+                fontSize: 9,
+                alignment: 'left'
+              },
+              {
+                text: 'Firma Controllo Qualità N.M.A.\n\n_______________________\nIng. N. M. Amine',
+                fontSize: 9,
+                alignment: 'right'
+              }
+            ]
+          }
+        ],
+        styles: {
+          header: { fontSize: 14, bold: true, color: '#0f172a', margin: [0, 4, 0, 2] },
+          subheader: { fontSize: 10, italic: true, color: '#475569', margin: [0, 0, 0, 8] },
+          sectionHeader: { fontSize: 11, bold: true, color: '#0284c7', margin: [0, 6, 0, 4] }
+        }
+      };
+    }
+
+    function downloadGeneratedPDF() {
+      pdfMake.createPdf(getPDFDocDefinition()).download(`Report_NMA_${currentActiveTab}.pdf`);
+    }
+
+    function sharePdfToChat() {
+      const user = document.getElementById('username').value || 'Operatore';
+      pdfMake.createPdf(getPDFDocDefinition()).getDataUrl((dataUrl) => {
+        socket.emit('chat-message', { user, text: `📄 **Report Ufficiale N.M.A. ISO/UNI Generato** [${tabsData[currentActiveTab].title}]`, file: dataUrl, fileName: `Report_NMA_${currentActiveTab}.pdf` });
+      });
+    }
+
+    function sendFile(input) {
+      const user = document.getElementById('username').value || 'Operatore';
+      const file = input.files[0];
+      if (file) {
+        if (file.size > 8 * 1024 * 1024) { alert("File troppo grande. Limite 8MB."); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) { socket.emit('chat-message', { user, file: e.target.result, fileName: file.name }); };
+        reader.readAsDataURL(file);
+      }
+    }
+  </script>
 </body>
 </html>
