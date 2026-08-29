@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>N.M.A. SYSTEMS - F1 Telemetry & Comms</title>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 10px; background: #0b0f19; color: #f8fafc; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px; }
+    h1 { margin: 0; color: #38bdf8; font-size: 20px; font-weight: 800; }
+    .badge { background: #16a34a; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    
+    .selector-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .selector-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; transition: 0.2s; }
+    .selector-btn.active { background: #0284c7; color: white; border-color: #38bdf8; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .card { background: #131c2e; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; position: relative; }
+    .card h2 { font-size: 14px; margin-top: 0; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+    @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
+    .f1-box { background: #0a1120; padding: 6px; border-radius: 4px; border: 1px solid #1e293b; text-align: center; }
+    .f1-title { font-size: 9px; color: #64748b; text-transform: uppercase; display: block; font-weight: 700; }
+    .f1-val { font-weight: 800; color: #38bdf8; font-size: 12px; font-family: monospace; }
+    
+    #map { height: 180px; border-radius: 6px; }
+    #chat-box { height: 180px; overflow-y: auto; background: #0a1120; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
+    .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: #1e293b; max-width: 85%; word-break: break-word; }
+    .chat-msg.me { background: #0369a1; margin-left: auto; }
+    
+    .chat-input-group { display: flex; gap: 4px; }
+    input[type="text"], select { padding: 6px 10px; background: #0a1120; border: 1px solid #1e293b; color: #fff; border-radius: 4px; font-size: 12px; }
+    button { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .btn-green { background: #16a34a; }
+    .btn-red { background: #dc2626; }
+    
+    .video-container { display: flex; gap: 8px; margin-bottom: 8px; }
+    video { width: 50%; height: 130px; border-radius: 6px; background: #000; object-fit: cover; }
+    
+    .incoming-call { display: none; background: #022c22; padding: 10px; border-radius: 6px; margin-bottom: 8px; text-align: center; border: 2px solid #10b981; animation: pulse 1s infinite alternate; }
+    @keyframes pulse { 0% { border-color: #10b981; } 100% { border-color: #f59e0b; } }
+
+    .iso-badge { display: inline-block; background: #1e293b; color: #38bdf8; font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-right: 3px; margin-bottom:3px; font-weight: bold; }
+    .pdf-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+    #chart-modal { display: none; position: absolute; top: 40px; left: 12px; right: 12px; background: #0f172a; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
+  </style>
+</head>
+<body onclick="unlockAudio()">
+
+  <header>
+    <div>
+      <h1>N.M.A. SYSTEMS</h1>
+      <small style="color: #64748b;">Enterprise Telemetry & Real-Time Comms</small>
+    </div>
+    <div>
+      <button onclick="requestNotifPermission()" style="font-size:10px; padding:4px 8px; background:#334155;">🔔 Push Notifiche</button>
+      <span class="badge" id="online-status">ONLINE</span>
+    </div>
+  </header>
+
+  <div class="selector-bar">
+    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Tubazioni Gas (Pipeline)</button>
+    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Automation</button>
+    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura Precisione</button>
+    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Fleet</button>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="grid-column: span 2;">
+      <h2 id="module-title">🚗 Automotive Telemetry OBD-III</h2>
+      <div class="f1-grid" id="metrics-container"></div>
+      
+      <div style="position:relative;">
+        <canvas id="liveChart" height="90"></canvas>
+        <div id="chart-modal">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:4px; margin-bottom:8px;">
+            <strong id="modal-time" style="color:#38bdf8; font-size:13px;">Dati Orario: 10:03</strong>
+            <button onclick="closeChartModal()" style="padding:2px 6px; font-size:10px; background:#dc2626;">✕ Chiudi</button>
+          </div>
+          <div id="modal-content" style="font-size:11px; color:#cbd5e1; display:grid; grid-template-columns: repeat(2, 1fr); gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🌍 GPS & Localizzazione Rete</h2>
+      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Flotta Test Torino</span></div>
+        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" id="dyn-latency" style="color:#4ade80;">12 ms</span></div>
+        <div class="f1-box"><span class="f1-title">Segnale</span><span class="f1-val" id="dyn-signal" style="color:#4ade80;">5G RTK</span></div>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🎬 Simulazione Tecnica & Assistenza Sensori</h2>
+      <select id="videoSelect" onchange="changeTutorialVideo()" style="width:100%; margin-bottom:8px;">
+        <option value="sim1">Simulazione 1: Saldatura Tubazioni PE / Acciaio (UNI 9737 / ISO 12176)</option>
+        <option value="sim2">Simulazione 2: Calibrazione Sensori Telemetrici & RTK 5G</option>
+      </select>
+      
+      <div id="tutorial-container" style="width:100%; height:140px; background:#0a1120; border-radius:6px; overflow:hidden; position:relative;">
+        <canvas id="sensorCanvas" width="320" height="140" style="width:100%; height:100%; background:#070b12;"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📞 N.M.A. COMMS - Linea Diretta Criptata</h2>
+      <div class="incoming-call" id="incomingCallBox">
+        <span id="callerName" style="font-weight:bold; color:#4ade80;">📞 Chiamata in arrivo...</span>
+        <div style="margin-top:8px; display:flex; gap:8px; justify-content:center;">
+          <button onclick="acceptCall()" class="btn-green">📞 Rispondi</button>
+          <button onclick="endCall()" class="btn-red">❌ Rifiuta</button>
+        </div>
+      </div>
+
+      <div class="video-container">
+        <video id="localVideo" autoplay playsinline muted></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+      </div>
+
+      <div style="display:flex; gap:6px;">
+        <button onclick="startCall(false)" style="flex:1;">🎤 Chiamata Audio</button>
+        <button onclick="startCall(true)" class="btn-green" style="flex:1;">📹 Videochiamata</button>
+        <button onclick="endCall()" class="btn-red" id="btn-end" style="display:none; flex:1;">🔴 Termina</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💬 Chat Tecnica & Media</h2>
+      <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
+        <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
+        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:120px; padding:3px;">
+      </div>
+      <div id="chat-box"></div>
+      <form onsubmit="sendMsg(event)" class="chat-input-group">
+        <input type="text" id="msg" placeholder="Scrivi un messaggio..." style="flex:1;">
+        <input type="file" id="photo-input" accept="image/*,application/pdf" style="display:none" onchange="sendFile(this)">
+        <button type="button" onclick="document.getElementById('photo-input').click()">📎</button>
+        <button type="submit" class="btn-green">Invia</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>📄 Report PDF Tecnico & Schede ISO/UNI</h2>
+      <div style="margin-bottom:8px;">
+        <span class="iso-badge">ISO 9001:2015</span>
+        <span class="iso-badge">ISO 14001:2015</span>
+        <span class="iso-badge">ISO 45001:2018</span>
+        <span class="iso-badge">ISO 3834-2</span>
+        <span class="iso-badge">UNI 9737</span>
+        <span class="iso-badge">UNI ISO 9606-1</span>
+      </div>
+      <p style="font-size:11px; color:#94a3b8; margin:0 0 10px 0;">Genera il report tecnico completo di verifica telemetrica e conformità agli standard ISO e UNI EN.</p>
+      <div class="pdf-actions">
+        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1;">📥 Scarica PDF Dinamico</button>
+        <button onclick="sharePdfToChat()" style="flex:1;">💬 Invia in Chat</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io({
+      transports: ['websocket', 'polling'],
+      reconnection: true
+    });
+
+    let audioCtx = null;
+    let ringtoneInterval = null;
+    let currentActiveTab = 'auto';
+    let gpsInterval = null;
+    let animId = null;
+
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function startRingtone() {
+      unlockAudio();
+      stopRingtone();
+      ringtoneInterval = setInterval(() => {
+        if (!audioCtx) return;
+        try {
+          let osc1 = audioCtx.createOscillator();
+          let osc2 = audioCtx.createOscillator();
+          let gain = audioCtx.createGain();
+          osc1.type = 'sine'; osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
+          osc2.frequency.setValueAtTime(480, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          osc1.connect(gain); osc2.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc1.start(); osc2.start();
+          osc1.stop(audioCtx.currentTime + 1.0);
+          osc2.stop(audioCtx.currentTime + 1.0);
+        } catch(e){}
+      }, 2200);
+    }
+
+    function stopRingtone() {
+      if (ringtoneInterval) { clearInterval(ringtoneInterval); ringtoneInterval = null; }
+    }
+
+    function updateUsername() {
+      const u = document.getElementById('username').value || 'Operatore';
+      socket.emit('register-user', u);
+    }
+    socket.on('connect', () => { updateUsername(); });
+
+    function requestNotifPermission() {
+      if ("Notification" in window) {
+        Notification.requestPermission().then(p => {
+          if (p === "granted") alert("Notifiche Push Attivate!");
+        });
+      }
+    }
+
+    function triggerNotif(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body: body, icon: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png' });
+      }
+    }
+
+    const tabsData = {
+      tubi: {
+        title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
+        metrics: [
+          { t: 'Pressione Pe', v: '12.4 Bar' }, { t: 'Portata Qv', v: '420 m³/h' }, { t: 'Portata Qm', v: '310 kg/h' },
+          { t: 'Delta P', v: '0.01 Bar' }, { t: 'Temp Gas', v: '14.2 °C' }, { t: 'Acustica Perdite', v: '0.0 dB' },
+          { t: 'Pot. Catodico', v: '-1.15 V' }, { t: 'Densità Gas', v: '0.72 kg/m³' }, { t: 'Posiz. Valvola', v: '100 %' },
+          { t: 'Estensimetro', v: '12 µε' }, { t: 'Saldatura ISO', v: '100 % OK' }, { t: 'Sicurezza Spec', v: '240 %' }
+        ]
+      },
+      cnc: {
+        title: '⚙️ CNC & Industrial Automation Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
+        metrics: [
+          { t: 'OEE Total', v: '97.2 %' }, { t: 'RPM Mandrino', v: '18,500' }, { t: 'Coppia Nm', v: '42.1 Nm' },
+          { t: 'Cos φ Potenza', v: '0.95' }, { t: 'Vibrazioni RMS', v: '0.03 g' }, { t: 'Temp Liquido', v: '20.8 °C' },
+          { t: 'Avanzamento', v: '1,250 mm/m' }, { t: 'Usura Utensile', v: '2.8 %' }, { t: 'THD Armoniche', v: '1.1 %' },
+          { t: 'Pressione Aria', v: '6.4 Bar' }, { t: 'Tempo Ciclo', v: '41.2 s' }, { t: 'MTBF stimato', v: '4,200 h' }
+        ]
+      },
+      agri: {
+        title: '🚜 Agricoltura di Precisione Telemetry', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
+        metrics: [
+          { t: 'Umidità Suolo', v: '42 %' }, { t: 'Indice NDVI', v: '0.85' }, { t: 'RPM PTO', v: '540 RPM' },
+          { t: 'Press. Idraulica', v: '185 Bar' }, { t: 'ET0 Evapo', v: '2.6 mm/g' }, { t: 'Compattazione', v: '1.1 MPa' },
+          { t: 'Resa Oraria', v: '4.5 Ha/h' }, { t: 'Consumo L/h', v: '13.8 L/h' }, { t: 'Slittamento', v: '1.8 %' },
+          { t: 'Sforzo Gancio', v: '11.5 kN' }, { t: 'Precisione RTK', v: '±1.0 cm' }, { t: 'Delta Resa', v: '+18 %' }
+        ]
+      },
+      auto: {
+        title: '🚗 Automotive Telemetry OBD-III', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        metrics: [
+          { t: 'Regime Motore', v: '3,950 RPM' }, { t: 'Press. Turbo', v: '1.90 Bar' }, { t: 'Temp Olio', v: '96 °C' },
+          { t: 'AFR Ratio', v: '14.7:1' }, { t: 'G-Force Lat', v: '1.18 G' }, { t: 'Temp Freni', v: '295 °C' },
+          { t: 'Flusso Carburante', v: '8.0 L/h' }, { t: 'Stato Carica SoC', v: '98 %' }, { t: 'Farfalla %', v: '82 %' },
+          { t: 'Temp EGT Gas', v: '675 °C' }, { t: 'Codici DTC', v: '0 Errore' }, { t: 'Velocità', v: '124 km/h' }
+        ]
+      }
+    };
+
+    function switchTab(k, evt) {
+      currentActiveTab = k;
+      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+      if(evt) evt.target.classList.add('active');
+      const d = tabsData[k];
+      document.getElementById('module-title').innerText = d.title;
+      document.getElementById('gps-label').innerText = d.label;
+      const c = document.getElementById('metrics-container');
+      c.innerHTML = '';
+      d.metrics.forEach(m => {
+        c.innerHTML += `<div class="f1-box"><span class="f1-title">${m.t}</span><span class="f1-val">${m.v}</span></div>`;
+      });
+      map.setView(d.gps, 13);
+      marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
+    }
+
+    let currentLat = 45.0800, currentLng = 7.6900;
+    const map = L.map('map', { preferCanvas: true }).setView([currentLat, currentLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+    const marker = L.marker([currentLat, currentLng]).addTo(map).bindPopup('Flotta Test Torino').openPopup();
+
+    switchTab('auto', null);
+
+    if (gpsInterval) clearInterval(gpsInterval);
+    gpsInterval = setInterval(() => {
+      currentLat += (Math.random() - 0.5) * 0.0002;
+      currentLng += (Math.random() - 0.5) * 0.0002;
+      marker.setLatLng([currentLat, currentLng]);
+      document.getElementById('dyn-latency').innerText = `${Math.floor(8 + Math.random() * 6)} ms`;
+      document.getElementById('dyn-signal').innerText = Math.random() > 0.1 ? '5G RTK' : '4G FIX';
+    }, 3000);
+
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    const timeLabels = ['10:00', '10:03', '10:05', '10:10', '10:15', '10:20', '10:25'];
+    const timeValues = [3800, 3860, 3850, 3950, 3900, 4000, 3950];
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: [{ label: 'Valore Telemetrico', data: timeValues, borderColor: '#38bdf8', tension: 0.3, pointRadius: 5, pointHoverRadius: 8, pointBackgroundColor: '#0284c7' }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { grid: { color: '#1e293b' } }, x: { grid: { color: '#1e293b' } } },
+        onClick: (e, elements) => {
+          if (elements.length > 0) {
+            const idx = elements[0].index;
+            showChartDetails(timeLabels[idx], timeValues[idx]);
+          }
+        }
+      }
+    });
+
+    function showChartDetails(time, val) {
+      document.getElementById('modal-time').innerText = `📊 Dati Telemetrici alle ore ${time}`;
+      const activeData = tabsData[currentActiveTab];
+      document.getElementById('modal-content').innerHTML = `
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Valore:</b> ${val} units</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Stato:</b> NOMINALE</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Modulo:</b> ${activeData.title.split(' ')[1]}</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Frequenza RTK:</b> 100 Hz</div>
+      `;
+      document.getElementById('chart-modal').style.display = 'block';
+    }
+
+    function closeChartModal() {
+      document.getElementById('chart-modal').style.display = 'none';
+    }
+
+    function changeTutorialVideo() {
+      const select = document.getElementById('videoSelect');
+      if (select.value === 'sim2') {
+        startSensorCanvasSimulation();
+      } else {
+        startWeldingCanvasSimulation();
+      }
+    }
+
+    function startWeldingCanvasSimulation() {
+      if (animId) cancelAnimationFrame(animId);
+      const cvs = document.getElementById('sensorCanvas');
+      const c = cvs.getContext('2d');
+      let progress = 0;
+
+      function draw() {
+        c.fillStyle = '#070b12'; c.fillRect(0, 0, cvs.width, cvs.height);
+        c.fillStyle = '#334155'; c.fillRect(20, 50, 280, 20);
+        c.fillStyle = '#1e293b'; c.fillRect(20, 70, 280, 20);
+        
+        let xPos = 40 + (progress % 240);
+        c.fillStyle = '#0284c7'; c.fillRect(40, 68, progress % 240, 4);
+        c.fillStyle = '#38bdf8'; c.beginPath(); c.arc(xPos, 70, 6 + Math.random()*3, 0, Math.PI*2); c.fill();
+        c.fillStyle = '#f59e0b'; c.beginPath(); c.arc(xPos, 70, 3, 0, Math.PI*2); c.fill();
+
+        c.fillStyle = '#38bdf8'; c.font = '10px monospace';
+        c.fillText('SIMULAZIONE SALDATURA ELETTROFUSIONE (UNI 9737)', 10, 20);
+        c.fillStyle = '#4ade80';
+        c.fillText(`TEMP GIUNTO: ${(210 + Math.sin(progress*0.1)*5).toFixed(1)} °C`, 10, 115);
+        c.fillText(`PRESSIONE FUSIONE: ${(2.2 + Math.cos(progress*0.1)*0.1).toFixed(2)} Bar`, 10, 130);
+
+        progress += 0.8;
+        animId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function startSensorCanvasSimulation() {
+      if (animId) cancelAnimationFrame(animId);
+      const cvs = document.getElementById('sensorCanvas');
+      const c = cvs.getContext('2d');
+      let angle = 0;
+
+      function draw() {
+        c.fillStyle = '#070b12'; c.fillRect(0, 0, cvs.width, cvs.height);
+        c.strokeStyle = '#0284c7'; c.lineWidth = 1;
+        c.beginPath(); c.arc(160, 70, 45, 0, Math.PI*2); c.stroke();
+        c.strokeStyle = '#38bdf8'; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(160, 70);
+        c.lineTo(160 + 45 * Math.cos(angle), 70 + 45 * Math.sin(angle)); c.stroke();
+        c.fillStyle = '#4ade80'; c.font = '10px monospace';
+        c.fillText('CALIBRAZIONE RTK 5G IN CORSO...', 10, 125);
+        angle += 0.04; animId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    startWeldingCanvasSimulation();
+
+    function sendMsg(e) {
+      if(e) e.preventDefault();
+      const input = document.getElementById('msg');
+      const user = document.getElementById('username').value || 'Operatore';
+      if (input.value.trim()) {
+        socket.emit('chat-message', { user, text: input.value.trim() });
+        input.value = '';
+      }
+    }
+
+    socket.on('chat-message', d => {
+      const u = d.user || 'Anonimo';
+      const me = u === (document.getElementById('username').value || 'Operatore');
+      if (!me) triggerNotif(`Messaggio da ${u}`, d.text || 'Nuovo allegato');
+      const b = document.getElementById('chat-box');
+      let content = '';
+      if (d.text) content += `<div>${d.text}</div>`;
+      if (d.file) content += `<div style="margin-top:4px;">📎 Allegato: <a href="${d.file}" download="${d.fileName || 'file'}" style="color:#38bdf8; font-weight:bold;">${d.fileName || 'Scarica Allegato'}</a></div>`;
+      b.innerHTML += `<div class="chat-msg ${me ? 'me' : ''}"><b>${u}:</b> ${content}</div>`;
+      
+      if (b.children.length > 40) b.removeChild(b.firstChild);
+      b.scrollTop = b.scrollHeight;
+    });
+
+    function getPDFDocDefinition() {
+      const activeData = tabsData[currentActiveTab];
+      const tableRows = [[{ text: 'Parametro Misurato', bold: true, fillColor: '#1e293b', color: '#38bdf8' }, { text: 'Valore Rilevato', bold: true, fillColor: '#1e293b', color: '#38bdf8' }]];
+      activeData.metrics.forEach(m => tableRows.push([m.t, m.v]));
+      return {
+        content: [
+          { text: 'N.M.A. SYSTEMS - REPORT TECNICO DI TELEMETRIA', style: 'header' },
+          { text: `Modulo Operativo: ${activeData.title}`, style: 'subheader' },
+          { text: `Data e Ora Generazione: ${new Date().toLocaleString('it-IT')}`, style: 'date' },
+          { text: '\n' },
+          { text: 'Certificazioni e Normative aziendali di Riferimento:', style: 'sectionHeader' },
+          { ul: [
+              'ISO 9001:2015 - Sistema di Gestione Qualità',
+              'ISO 14001:2015 - Sistema di Gestione Ambientale',
+              'ISO 45001:2018 - Salute e Sicurezza sul Lavoro',
+              'ISO 3834-2 - Requisiti di Qualità per la Saldatura',
+              'UNI 9737 - Qualifica Saldatori Tubi e Raccordi PE',
+              'UNI EN ISO 9606-1 - Qualifica Saldatori Acciaio'
+            ]
+          },
+          { text: '\nValori Telemetrici Rilevati:', style: 'sectionHeader' },
+          { table: { widths: ['*', '*'], body: tableRows } },
+          { text: '\nStato della Verifica:', style: 'sectionHeader' },
+          { text: 'CONFORME - Tutti i parametri rientrano nelle soglie ISO/UNI.', color: '#16a34a', bold: true }
+        ],
+        styles: { header: { fontSize: 16, bold: true, color: '#0284c7' }, subheader: { fontSize: 11, bold: true, color: '#334155' }, date: { fontSize: 9, italic: true }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 8, 0, 4] } }
+      };
+    }
+
+    function downloadGeneratedPDF() {
+      pdfMake.createPdf(getPDFDocDefinition()).download(`Report_NMA_${currentActiveTab}.pdf`);
+    }
+
+    function sharePdfToChat() {
+      const user = document.getElementById('username').value || 'Operatore';
+      pdfMake.createPdf(getPDFDocDefinition()).getDataUrl((dataUrl) => {
+        socket.emit('chat-message', { user, text: `📄 **Report Tecnico ISO/UNI Generato** [${tabsData[currentActiveTab].title}]`, file: dataUrl, fileName: `Report_NMA_${currentActiveTab}.pdf` });
+      });
+    }
+
+    function sendFile(input) {
+      const user = document.getElementById('username').value || 'Operatore';
+      const file = input.files[0];
+      if (file) {
+        if (file.size > 8 * 1024 * 1024) { alert("File troppo grande. Limite 8MB."); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) { socket.emit('chat-message', { user, file: e.target.result, fileName: file.name }); };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // --- LOGICA WEBRTC PER CHIAMATE E VIDEOCHIAMATE MOBILE ---
+    let localStream = null, peerConnection = null, pendingOffer = null, targetSocketId = null, callIsVideo = false;
+    let iceCandidatesQueue = [];
+    
+    const config = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
+    };
+
+    async function getOptimizedMedia(video) {
+      const constraints = {
+        audio: { echoCancellation: true, noiseSuppression: true },
+        video: video ? { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 360 } } : false
+      };
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    async function startCall(video) {
+      endCall();
+      callIsVideo = video;
+      unlockAudio();
+      try {
+        localStream = await getOptimizedMedia(video);
+        const lVideo = document.getElementById('localVideo');
+        lVideo.srcObject = localStream;
+        lVideo.style.display = video ? 'block' : 'none';
+        lVideo.play().catch(()=>{});
+
+        document.getElementById('btn-end').style.display = 'block';
+
+        peerConnection = new RTCPeerConnection(config);
+        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+        peerConnection.ontrack = e => {
+          const rVideo = document.getElementById('remoteVideo');
+          rVideo.srcObject = e.streams[0];
+          rVideo.style.display = video ? 'block' : 'none';
+          rVideo.play().catch(()=>{});
+        };
+
+        peerConnection.onicecandidate = e => {
+          if (e.candidate && targetSocketId) {
+            socket.emit('ice-candidate', { candidate: e.candidate, to: targetSocketId });
+          }
+        };
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('call-user', { offer, isVideo: video, username: document.getElementById('username').value });
+      } catch (e) {
+        alert("Errore accesso fotocamera/microfono: " + e.message);
+      }
+    }
+
+    socket.on('call-made', d => {
+      pendingOffer = d.offer;
+      targetSocketId = d.socket;
+      callIsVideo = d.isVideo;
+      iceCandidatesQueue = [];
+      
+      startRingtone();
+      triggerNotif(`📞 CHIAMATA DA ${d.username.toUpperCase()}`, "Tocca per rispondere");
+      
+      document.getElementById('callerName').innerText = `📞 CHIAMATA IN ARRIVO DA ${d.username}...`;
+      document.getElementById('incomingCallBox').style.display = 'block';
+    });
+
+    async function acceptCall() {
+      stopRingtone();
+      document.getElementById('incomingCallBox').style.display = 'none';
+      document.getElementById('btn-end').style.display = 'block';
+      unlockAudio();
+
+      try {
+        localStream = await getOptimizedMedia(callIsVideo);
+        const lVideo = document.getElementById('localVideo');
+        lVideo.srcObject = localStream;
+        lVideo.style.display = callIsVideo ? 'block' : 'none';
+        lVideo.play().catch(()=>{});
+
+        peerConnection = new RTCPeerConnection(config);
+        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+        peerConnection.ontrack = e => {
+          const rVideo = document.getElementById('remoteVideo');
+          rVideo.srcObject = e.streams[0];
+          rVideo.style.display = callIsVideo ? 'block' : 'none';
+          rVideo.play().catch(()=>{});
+        };
+
+        peerConnection.onicecandidate = e => {
+          if (e.candidate && targetSocketId) {
+            socket.emit('ice-candidate', { candidate: e.candidate, to: targetSocketId });
+          }
+        };
+
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+        
+        while (iceCandidatesQueue.length > 0) {
+          let cand = iceCandidatesQueue.shift();
+          await peerConnection.addIceCandidate(cand);
+        }
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        socket.emit('make-answer', { answer, to: targetSocketId });
+      } catch (e) {
+        alert("Errore accettazione chiamata: " + e.message);
+      }
+    }
+
+    function endCall() {
+      stopRingtone();
+      if (peerConnection) {
+        peerConnection.ontrack = null;
+        peerConnection.onicecandidate = null;
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+      const lVideo = document.getElementById('localVideo');
+      const rVideo = document.getElementById('remoteVideo');
+      if (lVideo) lVideo.srcObject = null;
+      if (rVideo) rVideo.srcObject = null;
+      document.getElementById('incomingCallBox').style.display = 'none';
+      document.getElementById('btn-end').style.display = 'none';
+      socket.emit('end-call', {});
+    }
+
+    socket.on('call-ended', () => endCall());
+    
+    socket.on('answer-made', async d => {
+      targetSocketId = d.socket;
+      if (peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(d.answer));
+        while (iceCandidatesQueue.length > 0) {
+          let cand = iceCandidatesQueue.shift();
+          await peerConnection.addIceCandidate(cand);
+        }
+      }
+    });
+
+    socket.on('ice-candidate', async d => {
+      let cand = new RTCIceCandidate(d.candidate);
+      if (peerConnection && peerConnection.remoteDescription) {
+        await peerConnection.addIceCandidate(cand);
+      } else {
+        iceCandidatesQueue.push(cand);
+      }
+    });
+  </script>
+</body>
+</html>
