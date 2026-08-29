@@ -110,11 +110,11 @@
   <header>
     <div>
       <h1>N.M.A. SYSTEMS 🌐 DIGITAL TWIN</h1>
-      <small style="color: #64748b;">Enterprise Telemetry & Real-Time Asset Simulation Platform</small>
+      <small style="color: #64748b;">Piattaforma Enterprise di Telemetria & Simolazione Gemello Digitale</small>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       
-      <button onclick="openAdminModal()" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #d97706; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;">⚙️ Configura Soglie</button>
+      <button onclick="openAdminModal()" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #d97706; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;">⚙️ Configura Soglie Admin</button>
       <span class="badge" id="alert-status">● SYSTEM STATUS: NOMINAL</span>
 
       <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: #0284c7;">5G RTK ACTIVE (0.4ms)</span>
@@ -122,10 +122,10 @@
   </header>
 
   <div class="selector-bar">
-    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Pipeline Gas Engineering</button>
-    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Industrial Robotics</button>
-    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Precision Agriculture</button>
-    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Telemetry OBD-III</button>
+    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Ingegneria Condotte Gas</button>
+    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Robotica Industriale</button>
+    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura di Precisione</button>
+    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Telemetria Veicolare OBD-III</button>
   </div>
 
   <div class="grid-main">
@@ -216,7 +216,7 @@
       </div>
       <p style="font-size:11px; color:#94a3b8; margin-bottom: 8px;">Esportazione reportistica accreditata o dataset sensoristici grezzi.</p>
       
-      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%; padding: 8px; margin-bottom:6px;">📥 Scarica Report PDF</button>
+      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%; padding: 8px; margin-bottom:6px;">📥 Scarica Certificato PDF</button>
       <div style="display:flex; gap:6px;">
         <button onclick="exportData('csv')" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📊 Export CSV</button>
         <button onclick="exportData('json')" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📄 Export JSON</button>
