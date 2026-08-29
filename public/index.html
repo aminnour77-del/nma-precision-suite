@@ -52,6 +52,55 @@
       border: 1px solid #334155;
       pointer-events: none;
     }
+    .canvas-controls {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+    }
+    .btn-3d {
+      background: rgba(15, 23, 42, 0.9);
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-3d:hover {
+      background: #0284c7;
+      color: #fff;
+    }
+    .alarm-box {
+      border: 1px solid #ef4444 !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+      animation: blink 1.2s infinite alternate;
+    }
+    @keyframes blink {
+      from { box-shadow: 0 0 2px #ef4444; }
+      to { box-shadow: 0 0 12px #ef4444; }
+    }
+    .time-selector {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .time-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .time-btn.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+    }
   </style>
 </head>
 <body>
@@ -61,8 +110,9 @@
       <h1>N.M.A. SYSTEMS 🌐 DIGITAL TWIN</h1>
       <small style="color: #64748b;">Enterprise Telemetry & Real-Time Asset Simulation Platform</small>
     </div>
-    <div>
-      <span class="badge">● 5G RTK ACTIVE (0.4ms)</span>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <span class="badge" id="alert-status">● SYSTEM STATUS: NOMINAL</span>
+      <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: #0284c7;">5G RTK ACTIVE (0.4ms)</span>
     </div>
   </header>
 
@@ -74,30 +124,48 @@
   </div>
 
   <div class="grid-main">
-    <!-- Telemetria Avanzata -->
+    <!-- Telemetria Avanzata e Analytics -->
     <div class="card">
-      <h2 id="module-title">🚗 Automotive Telemetry OBD-III</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 id="module-title" style="margin:0;">🚗 Automotive Telemetry OBD-III</h2>
+        <div class="time-selector">
+          <span style="font-size:10px; color:#64748b;">Range:</span>
+          <button class="time-btn active" onclick="changeTimeRange('1h', event)">1 Ora</button>
+          <button class="time-btn" onclick="changeTimeRange('24h', event)">24 Ore</button>
+          <button class="time-btn" onclick="changeTimeRange('7d', event)">7 Giorni</button>
+        </div>
+      </div>
+
       <div class="f1-grid" id="metrics-container"></div>
-      <div id="echarts2d" style="width: 100%; height: 290px;"></div>
+      <div id="echarts2d" style="width: 100%; height: 280px;"></div>
     </div>
 
-    <!-- Mappa Tattica GPS -->
+    <!-- Mappa Tattica GPS e Audit Log -->
     <div class="card">
       <h2>🌍 GPS Global Tactical Radar</h2>
-      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
         <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Torino Flotta</span></div>
         <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
         <div class="f1-box"><span class="f1-title">Stato</span><span class="f1-val" style="color:#4ade80;">TRACKING</span></div>
       </div>
-      <div id="map" style="height: 290px; border-radius: 6px;"></div>
+      <div id="map" style="height: 170px; border-radius: 6px; margin-bottom: 10px;"></div>
+
+      <h2 style="font-size: 11px; margin-bottom: 4px; color: #f59e0b;">🚨 Audit & Telemetry Event Log</h2>
+      <div id="event-log" style="height: 80px; overflow-y: auto; background: #030712; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; border: 1px solid #1e293b; color: #94a3b8;">
+        <div>[00:00:01] Connessione RTK 5G stabilita con successo.</div>
+      </div>
     </div>
   </div>
 
   <div class="grid-bottom">
-    <!-- Gemello Digitale 3D PBR con OrbitControls -->
+    <!-- Gemello Digitale 3D PBR Animato -->
     <div class="card">
-      <h2>🚘 Gemello Digitale 3D (Interactive CAD Simulation)</h2>
+      <h2>🚘 Gemello Digitale 3D (Interactive CAD Engine)</h2>
       <div id="three-canvas-container">
+        <div class="canvas-controls">
+          <button class="btn-3d" onclick="toggleWireframe()">🔲 Wireframe</button>
+          <button class="btn-3d" onclick="reset3DCamera()">🎯 Recentra</button>
+        </div>
         <div class="canvas-overlay" id="asset-label">Rendering Asset CAD...</div>
       </div>
     </div>
@@ -109,25 +177,29 @@
         <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
         <input type="text" id="username" value="Ing_NMA" style="width:120px; padding:3px;">
       </div>
-      <div id="chat-box" style="height: 180px; overflow-y: auto; background: #030712; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 8px; border: 1px solid #1e293b;"></div>
+      <div id="chat-box" style="height: 170px; overflow-y: auto; background: #030712; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 8px; border: 1px solid #1e293b;"></div>
       <form onsubmit="sendMsg(event)" class="chat-input-group" style="display:flex; gap:6px;">
         <input type="text" id="msg" placeholder="Inserisci comando..." style="flex:1;">
         <button type="submit" class="btn-green">Invia</button>
       </form>
     </div>
 
-    <!-- Certificazione ISO/UNI -->
+    <!-- Certificazione ISO/UNI & Data Export -->
     <div class="card">
-      <h2>📜 ISO/UNI Certification Engine</h2>
+      <h2>📜 ISO Engine & Data Export</h2>
       <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:4px;">
         <span class="iso-badge">ISO 9001:2015</span>
         <span class="iso-badge">ISO 14001</span>
         <span class="iso-badge">ISO 45001</span>
         <span class="iso-badge">UNI 9737</span>
-        <span class="iso-badge">UNI ISO 9606-1</span>
       </div>
-      <p style="font-size:11px; color:#94a3b8; margin-bottom: 12px;">Reportistica formale di collaudo e validazione con tracciabilità cifrata dei dati sensoristici.</p>
-      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%; padding: 10px;">📥 Scarica Report PDF</button>
+      <p style="font-size:11px; color:#94a3b8; margin-bottom: 8px;">Esportazione reportistica accreditata o dataset sensoristici grezzi.</p>
+      
+      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%; padding: 8px; margin-bottom:6px;">📥 Scarica Report PDF</button>
+      <div style="display:flex; gap:6px;">
+        <button onclick="exportData('csv')" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📊 Export CSV</button>
+        <button onclick="exportData('json')" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📄 Export JSON</button>
+      </div>
     </div>
   </div>
 
@@ -136,12 +208,14 @@
 
     const socket = io();
     let currentTab = 'auto';
+    let isWireframe = false;
+    let animatedParts = [];
 
-    // 1. Inizializzazione Grafico ECharts con DOPPIO ASSE Y
+    // 1. ECharts Setup
     const chartDom = document.getElementById('echarts2d');
     const myChart = echarts.init(chartDom);
 
-    // 2. Inizializzazione Three.js con Studio Light & OrbitControls
+    // 2. Three.js Setup
     const container = document.getElementById('three-canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -154,18 +228,15 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Studio Lighting setup
+    // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    
     const keyLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
     keyLight.position.set(5, 8, 5);
     scene.add(keyLight);
-
     const fillLight = new THREE.DirectionalLight(0x4ade80, 0.8);
     fillLight.position.set(-5, -2, -5);
     scene.add(fillLight);
 
-    // Grid Floor Industriale
     const gridHelper = new THREE.GridHelper(10, 20, 0x38bdf8, 0x1e293b);
     gridHelper.position.y = -1;
     scene.add(gridHelper);
@@ -173,12 +244,13 @@
     let activeGroup = new THREE.Group();
     scene.add(activeGroup);
 
-    // Costruttori 3D HD PBR
+    // Costruttori 3D Animati
     function buildAutomotiveAsset() {
       const g = new THREE.Group();
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.2 });
-      const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.1, roughness: 0.1, transparent: true, opacity: 0.6 });
-      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.8 });
+      animatedParts = [];
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.2, wireframe: isWireframe });
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.1, roughness: 0.1, transparent: true, opacity: 0.6, wireframe: isWireframe });
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.5, roughness: 0.8, wireframe: isWireframe });
 
       const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 1.2), bodyMat);
       body.position.y = 0.1;
@@ -194,15 +266,17 @@
         w.rotation.x = Math.PI / 2;
         w.position.set(...p);
         g.add(w);
+        animatedParts.push({ obj: w, type: 'wheel' });
       });
       return g;
     }
 
     function buildRoboticsAsset() {
       const g = new THREE.Group();
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.3 });
-      const armMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.3 });
-      const jointMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
+      animatedParts = [];
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.3, wireframe: isWireframe });
+      const armMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.3, wireframe: isWireframe });
+      const jointMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2, wireframe: isWireframe });
 
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 0.3, 32), baseMat);
       base.position.y = -0.85;
@@ -216,24 +290,17 @@
       arm1.position.set(0.2, 0.1, 0);
       arm1.rotation.z = -0.4;
       g.add(arm1);
-
-      const j2 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 24), jointMat);
-      j2.position.set(0.42, 0.6, 0);
-      g.add(j2);
-
-      const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.0, 24), armMat);
-      arm2.position.set(0.85, 0.6, 0);
-      arm2.rotation.z = Math.PI / 2;
-      g.add(arm2);
+      animatedParts.push({ obj: arm1, type: 'spindle' });
 
       return g;
     }
 
     function buildAgriAsset() {
       const g = new THREE.Group();
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, metalness: 0.4, roughness: 0.4 });
-      const cabinMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5 });
-      const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+      animatedParts = [];
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, metalness: 0.4, roughness: 0.4, wireframe: isWireframe });
+      const cabinMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5, wireframe: isWireframe });
+      const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, wireframe: isWireframe });
 
       const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 1.0), bodyMat);
       body.position.set(0.1, 0.1, 0);
@@ -244,19 +311,12 @@
       g.add(cabin);
 
       const bigTire = new THREE.CylinderGeometry(0.5, 0.5, 0.25, 24);
-      const smallTire = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 24);
-
       [[-0.4, 0.1, 0.6], [-0.4, 0.1, -0.6]].forEach(p => {
         const w = new THREE.Mesh(bigTire, tireMat);
         w.rotation.x = Math.PI / 2;
         w.position.set(...p);
         g.add(w);
-      });
-      [[0.6, -0.1, 0.55], [0.6, -0.1, -0.55]].forEach(p => {
-        const w = new THREE.Mesh(smallTire, tireMat);
-        w.rotation.x = Math.PI / 2;
-        w.position.set(...p);
-        g.add(w);
+        animatedParts.push({ obj: w, type: 'wheel' });
       });
 
       return g;
@@ -264,140 +324,136 @@
 
     function buildPipelineAsset() {
       const g = new THREE.Group();
-      const pipeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85, roughness: 0.25 });
-      const flangeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.2 });
-      const valveMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.3 });
+      animatedParts = [];
+      const pipeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85, roughness: 0.25, wireframe: isWireframe });
+      const valveMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.3, wireframe: isWireframe });
 
       const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 3.2, 32), pipeMat);
       pipe.rotation.z = Math.PI / 2;
       g.add(pipe);
 
-      [-1.2, 0, 1.2].forEach(x => {
-        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.12, 32), flangeMat);
-        flange.rotation.z = Math.PI / 2;
-        flange.position.x = x;
-        g.add(flange);
-      });
-
-      const valveBody = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.6, 24), flangeMat);
-      valveBody.position.set(0, 0.5, 0);
-      g.add(valveBody);
-
       const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.05, 16, 32), valveMat);
       wheel.rotation.x = Math.PI / 2;
       wheel.position.set(0, 0.8, 0);
       g.add(wheel);
+      animatedParts.push({ obj: wheel, type: 'valve' });
 
       return g;
     }
 
     function load3DAsset(tabKey) {
       scene.remove(activeGroup);
-      
-      if (tabKey === 'auto') {
-        activeGroup = buildAutomotiveAsset();
-        document.getElementById('asset-label').innerText = '🚘 Gemello 3D: Veicolo OBD-III & Sensori Telemetrici';
-      } else if (tabKey === 'cnc') {
-        activeGroup = buildRoboticsAsset();
-        document.getElementById('asset-label').innerText = '🏭 Gemello 3D: Isola Robotizzata CNC Multiasse';
-      } else if (tabKey === 'agri') {
-        activeGroup = buildAgriAsset();
-        document.getElementById('asset-label').innerText = '🚜 Gemello 3D: Trattore e Sistema Guida RTK 4.0';
-      } else if (tabKey === 'tubi') {
-        activeGroup = buildPipelineAsset();
-        document.getElementById('asset-label').innerText = '🔧 Gemello 3D: Condotta Gas UNI 9737 e Valvola Pressione';
-      }
+      if (tabKey === 'auto') activeGroup = buildAutomotiveAsset();
+      else if (tabKey === 'cnc') activeGroup = buildRoboticsAsset();
+      else if (tabKey === 'agri') activeGroup = buildAgriAsset();
+      else if (tabKey === 'tubi') activeGroup = buildPipelineAsset();
 
       scene.add(activeGroup);
+      reset3DCamera();
+    }
+
+    window.reset3DCamera = function() {
       camera.position.set(3.2, 2.2, 4.0);
       controls.target.set(0, 0, 0);
       controls.update();
-    }
+    };
+
+    window.toggleWireframe = function() {
+      isWireframe = !isWireframe;
+      load3DAsset(currentTab);
+    };
 
     function animateThree() {
       requestAnimationFrame(animateThree);
       controls.update();
-      if (activeGroup) activeGroup.rotation.y += 0.005;
+      
+      // Animazioni basate sui dati live
+      animatedParts.forEach(p => {
+        if (p.type === 'wheel') p.obj.rotation.z += 0.05;
+        if (p.type === 'spindle') p.obj.rotation.y += 0.1;
+        if (p.type === 'valve') p.obj.rotation.z += 0.02;
+      });
+
+      if (activeGroup) activeGroup.rotation.y += 0.003;
       renderer.render(scene, camera);
     }
     animateThree();
 
-    // Leaflet Dark Map Setup
+    // Map Setup
     const map = L.map('map').setView([45.0800, 7.6900], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup("Nodo Telemetrico Attivo");
 
-    // Dati dei 4 moduli con DOPPIO ASSE Y
+    // Dataset Globale
     const tabsData = {
       auto: {
-        title: '🚗 Automotive OBD-III Telemetry Platform',
-        gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        title: '🚗 Automotive OBD-III Telemetry Platform', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
         metrics: [
-          {t:'Regime', v:'3,950 RPM', st:'OK'}, {t:'Press. Turbo', v:'1.90 Bar', st:'BOOST'},
-          {t:'Temp. Olio', v:'96 °C', st:'OK'}, {t:'Rapporto AFR', v:'14.7:1', st:'STECHIO'},
-          {t:'G-Force Lat', v:'1.18 G', st:'SPORT'}, {t:'Temp. Freni', v:'295 °C', st:'IN RANGE'},
-          {t:'Consumo Live', v:'8.0 L/h', st:'ECO'}, {t:'Velocità', v:'124 km/h', st:'CRUISE'}
+          {t:'Regime', v:'3,950 RPM', st:'OK', alarm: false}, {t:'Press. Turbo', v:'2.45 Bar', st:'HIGH BOOST', alarm: true},
+          {t:'Temp. Olio', v:'96 °C', st:'OK', alarm: false}, {t:'Rapporto AFR', v:'14.7:1', st:'STECHIO', alarm: false},
+          {t:'G-Force Lat', v:'1.18 G', st:'SPORT', alarm: false}, {t:'Temp. Freni', v:'385 °C', st:'OVERHEAT', alarm: true},
+          {t:'Consumo Live', v:'8.0 L/h', st:'ECO', alarm: false}, {t:'Velocità', v:'124 km/h', st:'CRUISE', alarm: false}
         ],
         chart: {
           legend: ['Giri Motore (RPM)', 'Pressione Turbo (Bar)'],
           time: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25', '10:30'],
           y1Name: 'RPM', y2Name: 'Bar',
-          s1: [2100, 2800, 3950, 3200, 4100, 3800, 4200],
-          s2: [1.2, 1.5, 1.9, 1.6, 2.1, 1.85, 2.2]
+          s1: [2100, 2800, 3950, 3200, 4100, 3800, 4200], s2: [1.2, 1.5, 2.45, 1.6, 2.1, 1.85, 2.2]
         }
       },
       agri: {
-        title: '🚜 Precision Agriculture & Smart Farming',
-        gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
+        title: '🚜 Precision Agriculture & Smart Farming', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
         metrics: [
-          {t:'Umidità Suolo', v:'42 %', st:'OK'}, {t:'Indice NDVI', v:'0.85', st:'VIGOR'},
-          {t:'RPM Presa Forza', v:'540 RPM', st:'STD'}, {t:'Press. Idraulica', v:'185 Bar', st:'OK'},
-          {t:'Compattazione', v:'1.1 MPa', st:'NORMA'}, {t:'Resa Oraria', v:'4.5 Ha/h', st:'ALTA'},
-          {t:'Precisione RTK', v:'±1.0 cm', st:'CENTIMETRICA'}, {t:'Delta Resa', v:'+18 %', st:'GROWTH'}
+          {t:'Umidità Suolo', v:'18 %', st:'CRITICA', alarm: true}, {t:'Indice NDVI', v:'0.85', st:'VIGOR', alarm: false},
+          {t:'RPM Presa Forza', v:'540 RPM', st:'STD', alarm: false}, {t:'Press. Idraulica', v:'185 Bar', st:'OK', alarm: false},
+          {t:'Compattazione', v:'1.1 MPa', st:'NORMA', alarm: false}, {t:'Resa Oraria', v:'4.5 Ha/h', st:'ALTA', alarm: false},
+          {t:'Precisione RTK', v:'±1.0 cm', st:'CENTIMETRICA', alarm: false}, {t:'Delta Resa', v:'+18 %', st:'GROWTH', alarm: false}
         ],
         chart: {
           legend: ['Umidità Suolo (%)', 'Indice NDVI'],
           time: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
-          y1Name: '% Umidità', y2Name: 'Indice NDVI',
-          s1: [55, 50, 42, 38, 35, 40, 48],
-          s2: [0.80, 0.82, 0.85, 0.87, 0.86, 0.84, 0.83]
+          y1Name: '% Umidità', y2Name: 'NDVI',
+          s1: [55, 40, 30, 22, 18, 20, 25], s2: [0.80, 0.82, 0.85, 0.87, 0.86, 0.84, 0.83]
         }
       },
       cnc: {
-        title: '🏭 CNC & Industrial Robotics Telemetry',
-        gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
+        title: '🏭 CNC & Industrial Robotics Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
         metrics: [
-          {t:'OEE Totale', v:'97.2 %', st:'ECCELLENTE'}, {t:'RPM Mandrino', v:'18,500', st:'HIGH SPEED'},
-          {t:'Coppia NM', v:'42.1 Nm', st:'OK'}, {t:'Cos φ Potenza', v:'0.95', st:'EFFICIENTE'},
-          {t:'Vibrazioni RMS', v:'0.03 g', st:'BASSE'}, {t:'Avanzamento', v:'1,250 mm/m', st:'OK'},
-          {t:'Usura Utensile', v:'2.8 %', st:'BUONO'}, {t:'MTBF Stimato', v:'4,200 h', st:'AFFIDABILE'}
+          {t:'OEE Totale', v:'97.2 %', st:'ECCELLENTE', alarm: false}, {t:'RPM Mandrino', v:'18,500', st:'HIGH SPEED', alarm: false},
+          {t:'Coppia NM', v:'42.1 Nm', st:'OK', alarm: false}, {t:'Cos φ Potenza', v:'0.95', st:'EFFICIENTE', alarm: false},
+          {t:'Vibrazioni RMS', v:'0.09 g', st:'ALTE', alarm: true}, {t:'Avanzamento', v:'1,250 mm/m', st:'OK', alarm: false},
+          {t:'Usura Utensile', v:'2.8 %', st:'BUONO', alarm: false}, {t:'MTBF Stimato', v:'4,200 h', st:'AFFIDABILE', alarm: false}
         ],
         chart: {
           legend: ['Velocità Mandrino (RPM)', 'Vibrazioni RMS (g)'],
           time: ['Shift 1', 'Shift 2', 'Shift 3', 'Shift 4', 'Shift 5', 'Shift 6'],
           y1Name: 'RPM', y2Name: 'Vibrazione (g)',
-          s1: [12000, 15000, 18500, 18200, 18500, 16000],
-          s2: [0.020, 0.025, 0.030, 0.028, 0.029, 0.031]
+          s1: [12000, 15000, 18500, 18200, 18500, 16000], s2: [0.02, 0.03, 0.09, 0.04, 0.03, 0.02]
         }
       },
       tubi: {
-        title: '🔧 Gas Pipeline & Infrastructure Engineering',
-        gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
+        title: '🔧 Gas Pipeline & Infrastructure Engineering', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
         metrics: [
-          {t:'Pressione PE', v:'12.4 Bar', st:'NOMINALE'}, {t:'Portata Qv', v:'420 m³/h', st:'NOMINALE'},
-          {t:'Temp. Gas', v:'14.2 °C', st:'OK'}, {t:'Delta P', v:'0.01 Bar', st:'OTTIMALE'},
-          {t:'Acustica Perdit.', v:'0.0 dB', st:'ZERO LOSS'}, {t:'Pot. Catodico', v:'-1.15 V', st:'PROTEZIONE OK'},
-          {t:'Estensimetro', v:'12 microE', st:'STABILE'}, {t:'Saldatura ISO', v:'100 % OK', st:'UNI 9737'}
+          {t:'Pressione PE', v:'12.4 Bar', st:'NOMINALE', alarm: false}, {t:'Portata Qv', v:'420 m³/h', st:'NOMINALE', alarm: false},
+          {t:'Temp. Gas', v:'14.2 °C', st:'OK', alarm: false}, {t:'Delta P', v:'0.01 Bar', st:'OTTIMALE', alarm: false},
+          {t:'Acustica Perdit.', v:'0.0 dB', st:'ZERO LOSS', alarm: false}, {t:'Pot. Catodico', v:'-1.15 V', st:'PROTEZIONE OK', alarm: false},
+          {t:'Estensimetro', v:'12 microE', st:'STABILE', alarm: false}, {t:'Saldatura ISO', v:'100 % OK', st:'UNI 9737', alarm: false}
         ],
         chart: {
           legend: ['Portata Volumetrica (m³/h)', 'Pressione Rete (Bar)'],
           time: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-          y1Name: 'Portata (m³/h)', y2Name: 'Pressione (Bar)',
-          s1: [310, 280, 450, 420, 390, 480, 350],
-          s2: [12.1, 12.3, 12.8, 12.4, 12.2, 12.5, 12.2]
+          y1Name: 'Portata', y2Name: 'Pressione',
+          s1: [310, 280, 450, 420, 390, 480, 350], s2: [12.1, 12.3, 12.8, 12.4, 12.2, 12.5, 12.2]
         }
       }
     };
+
+    function addLog(msg, isWarning = false) {
+      const log = document.getElementById('event-log');
+      const time = new Date().toLocaleTimeString();
+      const color = isWarning ? '#ef4444' : '#94a3b8';
+      log.innerHTML = `<div style="color:${color};">[${time}] ${msg}</div>` + log.innerHTML;
+    }
 
     function updateChart(cData) {
       const option = {
@@ -407,30 +463,12 @@
         grid: { left: '4%', right: '4%', bottom: '5%', containLabel: true },
         xAxis: { type: 'category', boundaryGap: false, data: cData.time, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
         yAxis: [
-          {
-            type: 'value', name: cData.y1Name, nameTextStyle: { color: '#38bdf8' },
-            axisLine: { lineStyle: { color: '#38bdf8' } }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-            axisLabel: { color: '#94a3b8' }
-          },
-          {
-            type: 'value', name: cData.y2Name, nameTextStyle: { color: '#4ade80' },
-            axisLine: { lineStyle: { color: '#4ade80' } }, splitLine: { show: false },
-            axisLabel: { color: '#94a3b8' }
-          }
+          { type: 'value', name: cData.y1Name, nameTextStyle: { color: '#38bdf8' }, axisLine: { lineStyle: { color: '#38bdf8' } }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#94a3b8' } },
+          { type: 'value', name: cData.y2Name, nameTextStyle: { color: '#4ade80' }, axisLine: { lineStyle: { color: '#4ade80' } }, splitLine: { show: false }, axisLabel: { color: '#94a3b8' } }
         ],
         series: [
-          {
-            name: cData.legend[0], type: 'line', yAxisIndex: 0, smooth: true,
-            lineStyle: { width: 3, color: '#38bdf8' },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(56, 189, 248, 0.35)' }, { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }]) },
-            data: cData.s1
-          },
-          {
-            name: cData.legend[1], type: 'line', yAxisIndex: 1, smooth: true,
-            lineStyle: { width: 3, color: '#4ade80' },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(74, 222, 128, 0.25)' }, { offset: 1, color: 'rgba(74, 222, 128, 0.0)' }]) },
-            data: cData.s2
-          }
+          { name: cData.legend[0], type: 'line', yAxisIndex: 0, smooth: true, lineStyle: { width: 3, color: '#38bdf8' }, data: cData.s1 },
+          { name: cData.legend[1], type: 'line', yAxisIndex: 1, smooth: true, lineStyle: { width: 3, color: '#4ade80' }, data: cData.s2 }
         ]
       };
       myChart.setOption(option, true);
@@ -443,15 +481,59 @@
       const d = tabsData[k];
       document.getElementById('module-title').innerText = d.title;
       document.getElementById('gps-label').innerText = d.label;
+      
       const c = document.getElementById('metrics-container');
       c.innerHTML = '';
+      let hasAlarm = false;
+
       d.metrics.forEach(m => {
-        c.innerHTML += `<div class="f1-box"><span class="f1-title">${m.t}</span><span class="f1-val">${m.v}</span><span class="f1-status st-ok">${m.st}</span></div>`;
+        const alarmClass = m.alarm ? 'alarm-box' : '';
+        if (m.alarm) {
+          hasAlarm = true;
+          addLog(`WARNING: ${m.t} fuori soglia (${m.v})`, true);
+        }
+        c.innerHTML += `<div class="f1-box ${alarmClass}"><span class="f1-title">${m.t}</span><span class="f1-val">${m.v}</span><span class="f1-status st-ok">${m.st}</span></div>`;
       });
+
+      const badge = document.getElementById('alert-status');
+      if (hasAlarm) {
+        badge.innerText = '⚠️ WARNING: ANOMALIA SENSORISTICA';
+        badge.style.background = 'rgba(239, 68, 68, 0.2)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = '#ef4444';
+      } else {
+        badge.innerText = '● SYSTEM STATUS: NOMINAL';
+        badge.style.background = 'rgba(74, 222, 128, 0.1)';
+        badge.style.color = '#4ade80';
+        badge.style.borderColor = '#22c55e';
+      }
+
       map.setView(d.gps, 13);
       marker.setLatLng(d.gps);
       updateChart(d.chart);
       load3DAsset(k);
+    };
+
+    window.changeTimeRange = function(range, evt) {
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+      evt.target.classList.add('active');
+      addLog(`Range temporale aggiornato a: ${range}`);
+    };
+
+    window.exportData = function(type) {
+      const activeData = tabsData[currentTab];
+      if (type === 'json') {
+        const blob = new Blob([JSON.stringify(activeData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `NMA_Data_${currentTab}.json`; a.click();
+      } else if (type === 'csv') {
+        let csv = 'Metrica,Valore,Stato\n';
+        activeData.metrics.forEach(m => { csv += `"${m.t}","${m.v}","${m.st}"\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `NMA_Data_${currentTab}.csv`; a.click();
+      }
+      addLog(`Export ${type.toUpperCase()} generato con successo.`);
     };
 
     window.switchTab('auto', null);
