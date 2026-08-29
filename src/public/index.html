@@ -2,701 +2,552 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>N.M.A. SYSTEMS - Industrial 3D Telemetry & AI Suite</title>
-  
-  <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N.M.A. SYSTEMS - Enterprise 3D Telemetry & AI Suite</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --bg-main: #070a12;
-      --bg-card: #0f172a;
-      --bg-box: #020617;
-      --border-color: #1e293b;
+      --bg-dark: #0a0e17;
+      --panel-bg: rgba(16, 24, 39, 0.85);
+      --panel-border: #1e293b;
+      --accent-cyan: #00f2fe;
+      --accent-blue: #4facfe;
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --accent: #0284c7;
-      --accent-light: #38bdf8;
     }
-
-    body.cad-theme {
-      --bg-main: #f1f5f9;
-      --bg-card: #ffffff;
-      --bg-box: #e2e8f0;
-      --border-color: #cbd5e1;
-      --text-main: #0f172a;
-      --text-muted: #475569;
-      --accent: #0284c7;
-      --accent-light: #0369a1;
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); overflow-x: hidden; min-height: 100vh; }
+    
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 24px; background: rgba(10, 14, 23, 0.95);
+      border-bottom: 1px solid var(--panel-border); backdrop-filter: blur(10px);
+      position: sticky; top: 0; z-index: 100;
     }
-
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 12px; background: var(--bg-main); color: var(--text-main); transition: background 0.3s, color 0.3s; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 18px; color: #000; box-shadow: 0 0 15px rgba(0,242,254,0.4);
+    }
+    .brand-title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+    .brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
     
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px; }
-    .brand-title { margin: 0; color: var(--accent-light); font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
-    .brand-subtitle { color: var(--text-muted); font-size: 11px; margin-top: 2px; }
-
-    .top-actions { display: flex; gap: 8px; align-items: center; }
-    .badge-online { background: #15803d; color: #f0fdf4; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .nav-tabs { display: flex; gap: 8px; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid var(--panel-border); }
+    .tab-btn {
+      padding: 8px 16px; border: none; background: transparent; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+    .tab-btn.active { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.4); }
     
-    .selector-bar { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
-    .selector-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; white-space: nowrap; transition: all 0.2s; }
-    .selector-btn:hover { border-color: var(--accent-light); color: var(--text-main); }
-    .selector-btn.active { background: var(--accent); color: white; border-color: var(--accent-light); box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .btn-action {
+      padding: 8px 14px; border-radius: 6px; border: 1px solid var(--panel-border);
+      background: #1e293b; color: var(--text-main); font-size: 12px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .btn-action:hover { background: #334155; border-color: var(--accent-cyan); }
+    .btn-primary { background: linear-gradient(135deg, #10b981, #059669); border: none; }
+    .btn-primary:hover { background: linear-gradient(135deg, #34d399, #10b981); }
     
-    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
-    @media (max-width: 960px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    .audio-badge {
+      display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+      border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3); color: var(--accent-green); cursor: pointer;
+    }
+    .audio-badge.muted { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--accent-red); }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
 
-    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-    .card h2 { font-size: 14px; font-weight: 700; margin-top: 0; margin-bottom: 12px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .dashboard-container {
+      display: grid; grid-template-columns: 1fr 420px; gap: 16px; padding: 16px;
+      max-width: 1800px; margin: 0 auto; height: calc(100vh - 65px);
+    }
     
-    .telemetry-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    @media (max-width: 640px) { .telemetry-row { grid-template-columns: 1fr; } }
-
-    #three-container { width: 100%; height: 250px; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); border-radius: 8px; position: relative; border: 1px solid var(--border-color); cursor: grab; }
-    #three-container:active { cursor: grabbing; }
-    .3d-hint { position: absolute; bottom: 8px; left: 8px; font-size: 9.5px; color: #cbd5e1; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); }
-    .sensor-tag { position: absolute; top: 12px; right: 12px; background: rgba(2, 132, 199, 0.9); color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; border: 1px solid var(--accent-light); }
-
-    .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
-    @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
-    .f1-box { background: var(--bg-box); padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); text-align: center; }
-    .f1-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; }
-    .f1-val { font-weight: 800; color: var(--accent-light); font-size: 14px; font-family: 'SF Mono', Consolas, monospace; margin: 3px 0; }
-    .f1-status { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; }
-    .st-ok { background: #064e3b; color: #34d399; }
-    .st-warn { background: #713f12; color: #fde047; }
-    .st-crit { background: #7f1d1d; color: #fca5a5; }
-
-    #map { height: 230px; border-radius: 8px; border: 1px solid var(--border-color); }
-    #chat-box { height: 170px; overflow-y: auto; background: var(--bg-box); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 11px; }
-    .chat-msg { margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; background: var(--border-color); max-width: 85%; }
-    .chat-msg.me { background: var(--accent); color: white; margin-left: auto; }
+    .left-column { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+    .viewport-card {
+      position: relative; flex: 1.2; min-height: 320px; background: var(--panel-bg);
+      border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden;
+    }
+    #webgl-canvas { width: 100%; height: 100%; display: block; }
     
-    .chat-input-group { display: flex; gap: 6px; }
-    input[type="text"] { padding: 8px 12px; background: var(--bg-box); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 6px; font-size: 12px; }
-    button { background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    .btn-green { background: #15803d; }
-    .btn-red { background: #b91c1c; }
-    .btn-secondary { background: #334155; }
-
-    #sig-canvas { background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; cursor: crosshair; touch-action: none; width: 100%; height: 90px; }
-    .ai-copilot { background: rgba(2, 132, 199, 0.08); border: 1px solid var(--accent); padding: 10px; border-radius: 8px; font-size: 12px; color: var(--accent-light); margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+    .viewport-overlay {
+      position: absolute; top: 12px; left: 12px; pointer-events: none;
+      background: rgba(15, 23, 42, 0.75); padding: 10px 14px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+    }
+    .viewport-title { font-size: 13px; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; }
+    .viewport-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    
+    .controls-overlay {
+      position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; pointer-events: auto;
+    }
+    .icon-btn {
+      width: 32px; height: 32px; border-radius: 6px; background: rgba(15,23,42,0.8);
+      border: 1px solid var(--panel-border); color: #fff; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; font-size: 12px; transition: all 0.2s;
+    }
+    .icon-btn:hover { background: var(--accent-cyan); color: #000; }
+    
+    .chart-card {
+      flex: 1; min-height: 220px; background: var(--panel-bg); border: 1px solid var(--panel-border);
+      border-radius: 12px; padding: 14px; display: flex; flex-direction: column;
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    .card-title i { color: var(--accent-cyan); }
+    
+    .chart-container { flex: 1; position: relative; width: 100%; }
+    #telemetryCanvas { width: 100%; height: 100%; display: block; }
+    
+    .right-column {
+      display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px;
+    }
+    
+    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi-card {
+      background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px;
+      padding: 12px; display: flex; flex-direction: column; gap: 4px; position: relative;
+    }
+    .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 20px; font-weight: 800; color: var(--text-main); font-family: monospace; }
+    .kpi-sub { font-size: 10px; color: var(--accent-green); display: flex; align-items: center; gap: 4px; }
+    
+    .stats-panel {
+      background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px;
+    }
+    .stats-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+    .stats-table th { text-align: left; padding: 6px; color: var(--text-muted); border-bottom: 1px solid var(--panel-border); }
+    .stats-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .badge-status { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; display: inline-block; }
+    .badge-pass { background: rgba(16,185,129,0.15); color: #34d399; }
+    
+    .health-bar-container { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .health-item { display: flex; flex-direction: column; gap: 2px; }
+    .health-info { display: flex; justify-content: space-between; font-size: 11px; }
+    .progress-track { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue)); border-radius: 3px; transition: width 0.5s ease; }
+    
+    .fft-container { display: flex; align-items: flex-end; gap: 4px; height: 50px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--panel-border); }
+    .fft-bar { flex: 1; background: linear-gradient(0deg, #0284c7, var(--accent-cyan)); border-radius: 2px 2px 0 0; transition: height 0.3s; }
   </style>
 </head>
 <body>
 
   <header>
-    <div>
-      <h1 class="brand-title">N.M.A. SYSTEMS</h1>
-      <div class="brand-subtitle">Industrial Digital Twin 3D Telemetry & Quality Engineering Platform</div>
+    <div class="brand">
+      <div class="brand-logo">NMA</div>
+      <div>
+        <div class="brand-title">N.M.A. SYSTEMS Precision Suite</div>
+        <div class="brand-sub">Enterprise 3D Telemetry & AI Diagnostic Platform</div>
+      </div>
     </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchDomain('tubi')"><i class="fa-solid fa-pipe-valve"></i> Tubi Gas (UNI 9737)</button>
+      <button class="tab-btn" onclick="switchDomain('snc')"><i class="fa-solid fa-cubes-stacked"></i> SNC Inox Strutture</button>
+      <button class="tab-btn" onclick="switchDomain('automotive')"><i class="fa-solid fa-truck-monster"></i> Automotive & Fleet</button>
+      <button class="tab-btn" onclick="switchDomain('agricoltura')"><i class="fa-solid fa-seedling"></i> Agricoltura & Pompe</button>
+    </div>
+
     <div class="top-actions">
-      <button onclick="testAlarmAudio()" class="btn-secondary">🔊 Test Allarme Audio</button>
-      <button onclick="toggleTheme()" class="btn-secondary">☀️ Theme CAD</button>
-      <span class="badge-online">ONLINE RTK</span>
+      <div id="audioStatusBadge" class="audio-badge" onclick="toggleAudio()">
+        <span class="pulse-dot"></span><i class="fa-solid fa-volume-high" id="audioIcon"></i><span id="audioText">Audio Attivo</span>
+      </div>
+      <button class="btn-action" onclick="testAlarm()"><i class="fa-solid fa-bell"></i> Test Allarme</button>
+      <button class="btn-action btn-primary" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> Report Certificato PDF</button>
     </div>
   </header>
 
-  <div class="selector-bar">
-    <button class="selector-btn active" onclick="switchTab('tubi', event)">🔧 Pipeline Inox Gas (Attacco Sensori NMA)</button>
-    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 Mandrino CNC Alta Precisione</button>
-    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 RTK Rover Agricoltura</button>
-    <button class="selector-btn" onclick="switchTab('auto', event)">🚗 Automotive Telemetry OBD-III</button>
-  </div>
-
-  <div class="dashboard-grid">
-    <div class="card">
-      <h2 id="module-title">
-        <span>🔧 Pipeline Inox Gas (Attacco Sensori NMA)</span>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-red" onclick="triggerFaultInjection()">🚨 Simula Anomalia Stress</button>
-          <button class="btn-secondary" onclick="resetMetrics()">🔄 Ripristina</button>
+  <div class="dashboard-container">
+    <div class="left-column">
+      <div class="viewport-card">
+        <canvas id="webgl-canvas"></canvas>
+        <div class="viewport-overlay">
+          <div class="viewport-title" id="domainTitle"><i class="fa-solid fa-microchip"></i> Tubazione Gas Industriale (UNI 9737)</div>
+          <div class="viewport-subtitle" id="domainSub">Modello 3D Parametrico con Giunti di Saldatura e Sensori di Pressione</div>
         </div>
-      </h2>
-
-      <div class="telemetry-row">
-        <div>
-          <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">DIGITAL TWIN 3D INDUSTRIALE</div>
-          <div id="three-container">
-            <div class="3d-hint">🖱️ Trascina per ruotare 360° | Scroll per Zoom</div>
-            <div class="sensor-tag" id="sensor-status-tag">📍 Attacco Sensore NMA: Vacante</div>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">ANALISI TELEMETRICA LIVE</div>
-          <canvas id="liveChart" height="195"></canvas>
+        <div class="controls-overlay">
+          <button class="icon-btn" onclick="resetCamera()"><i class="fa-solid fa-rotate-right"></i></button>
+          <button class="icon-btn" onclick="toggleAutoRotate()"><i class="fa-solid fa-arrows-spin"></i></button>
+          <button class="icon-btn" onclick="toggleWireframe()"><i class="fa-solid fa-border-all"></i></button>
         </div>
       </div>
 
-      <div class="f1-grid" id="metrics-container"></div>
-
-      <div class="ai-copilot" id="ai-status">
-        <span>🤖</span>
-        <div><b>AI COPILOT DIAGNOSTICO:</b> Sistema in operatività nominale. Tolleranze meccaniche e di pressione ISO/UNI rispettate.</div>
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title"><i class="fa-solid fa-chart-line"></i> Analisi Telemetrica Dinamica in Tempo Reale</div>
+          <div style="font-size: 11px; color: var(--text-muted); font-family: monospace;">FREQ: 20Hz | SAMPLING: HIGH-ACCURACY</div>
+        </div>
+        <div class="chart-container"><canvas id="telemetryCanvas"></canvas></div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>🌍 GPS RTK & Geolocalizzazione Impianto</h2>
-      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:10px;">
-        <div class="f1-box"><span class="f1-title">Nodo Impianto</span><span class="f1-val" id="gps-label" style="font-size:11px;">Torino Nord</span></div>
-        <div class="f1-box"><span class="f1-title">Latenza RTK</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
-        <div class="f1-box"><span class="f1-title">Stato Rete</span><span class="f1-val" style="color:#4ade80;">5G ONLINE</span></div>
-      </div>
-      <div id="map"></div>
-    </div>
-  </div>
-
-  <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr;">
-    <div class="card">
-      <h2>💬 Operational Service Hub & Chat Operatore</h2>
-      <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
-        <span style="font-size:11px; font-weight:700; color:var(--text-muted);">Operatore Certificato:</span>
-        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:150px;">
-      </div>
-
-      <div id="chat-box"></div>
-      <form onsubmit="sendMsg(event)" class="chat-input-group">
-        <input type="text" id="msg" placeholder="Inserisci note di collaudo o messaggi di servizio..." style="flex:1;">
-        <input type="file" id="photo-input" accept="image/*,application/pdf" style="display:none" onchange="sendFile(this)">
-        <button type="button" class="btn-secondary" onclick="document.getElementById('photo-input').click()">📎</button>
-        <button type="submit" class="btn-green">Invia</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>✍️ Firma Collaudatore & Certificate Export</h2>
-      <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">FIRMA AUTOGRAFA COL LAUDATORE (DISAGNA SUL CANVAS):</div>
-      <canvas id="sig-canvas" width="400" height="90"></canvas>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-        <button onclick="clearSignature()" class="btn-secondary" style="font-size:10px; padding:4px 8px;">🗑️ Pulisci Canvas</button>
-        <span style="font-size:10px; color:var(--text-muted); font-weight:700;">Normative: ISO 9001 | ISO 3834-2 | UNI 9737</span>
+    <div class="right-column">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label" id="kpi1-label">Pressione Fluido</div>
+          <div class="kpi-value" id="kpi1-val">4.21 bar</div>
+          <div class="kpi-sub" id="kpi1-sub"><i class="fa-solid fa-circle-check"></i> Tolleranza ISO OK</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" id="kpi2-label">Temperatura Operativa</div>
+          <div class="kpi-value" id="kpi2-val">24.5 °C</div>
+          <div class="kpi-sub" id="kpi2-sub"><i class="fa-solid fa-temperature-arrow-up"></i> Nominale (20-30°C)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" id="kpi3-label">Tensostress / Carico</div>
+          <div class="kpi-value" id="kpi3-val">128 MPa</div>
+          <div class="kpi-sub" id="kpi3-sub"><i class="fa-solid fa-shield-halved"></i> 58% del Limite</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" id="kpi4-label">Indice Efficienza (OEE)</div>
+          <div class="kpi-value" id="kpi4-val">98.4%</div>
+          <div class="kpi-sub" id="kpi4-sub"><i class="fa-solid fa-bolt"></i> Performance Ottimale</div>
+        </div>
       </div>
 
-      <div style="display:flex; gap:8px; margin-top:12px;">
-        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1; padding:12px; font-size:13px;">📑 Genera Report di Collaudo Professionale PDF</button>
+      <div class="stats-panel">
+        <div class="card-title" style="margin-bottom: 8px;"><i class="fa-solid fa-list-check"></i> Tolleranze & Parametri di Conformità</div>
+        <table class="stats-table">
+          <thead><tr><th>Parametro ISO/UNI</th><th>Misurato</th><th>Soglia Ammessa</th><th>Esito</th></tr></thead>
+          <tbody id="toleranceTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="stats-panel">
+        <div class="card-title"><i class="fa-solid fa-heart-pulse"></i> Matrice di Salute Componenti & Vibrazioni (FFT)</div>
+        <div class="health-bar-container" id="healthContainer"></div>
+        <div style="margin-top: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600;">SPETTRO ARMONICHE VIBRAZIONALI (FFT)</div>
+        <div class="fft-container" id="fftContainer"></div>
+      </div>
+
+      <div class="stats-panel" style="border-left: 4px solid var(--accent-cyan);">
+        <div class="card-title" style="color: var(--accent-cyan);"><i class="fa-solid fa-brain"></i> Diagnostica Predittiva AI (NMA Engine)</div>
+        <div style="font-size: 12px; margin-top: 8px; line-height: 1.5;" id="aiDiagnosisText">Sistema in condizioni eccellenti. Nessuna anomalia rilevata.</div>
       </div>
     </div>
   </div>
 
   <script>
-    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
-    let currentActiveTab = 'tubi';
+    let currentDomain = 'tubi', autoRotate = true, isWireframe = false, audioEnabled = true, audioCtx = null;
 
-    // SBLOCCO AUDIO AUTOMATICO SU QUALSIASI INTERAZIONE
-    let audioCtx = null;
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-    document.addEventListener('click', initAudio);
-    document.addEventListener('touchstart', initAudio);
-
-    function playAlarmSound() {
-      initAudio();
-      if (!audioCtx) return;
-      
-      const now = audioCtx.currentTime;
-      for (let i = 0; i < 3; i++) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, now + i * 0.25);
-        osc.frequency.exponentialRampToValueAtTime(440, now + i * 0.25 + 0.18);
-        
-        gain.gain.setValueAtTime(0.4, now + i * 0.25);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.25 + 0.2);
-        
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        osc.start(now + i * 0.25);
-        osc.stop(now + i * 0.25 + 0.2);
-      }
-    }
-
-    function testAlarmAudio() {
-      playAlarmSound();
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('cad-theme');
-    }
-
-    function updateUsername() {
-      const u = document.getElementById('username').value || 'Operatore';
-      socket.emit('register-user', u);
-    }
-    socket.on('connect', () => { updateUsername(); });
-
-    // CANVAS FIRMA
-    const sigCanvas = document.getElementById('sig-canvas');
-    const sigCtx = sigCanvas.getContext('2d');
-    let isDrawing = false;
-
-    function getPos(e) {
-      const rect = sigCanvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-    function startDrawing(e) { isDrawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }
-    function draw(e) { if (!isDrawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.strokeStyle = '#0284c7'; sigCtx.lineWidth = 2.5; sigCtx.stroke(); }
-    function stopDrawing() { isDrawing = false; }
-
-    sigCanvas.addEventListener('mousedown', startDrawing);
-    sigCanvas.addEventListener('mousemove', draw);
-    sigCanvas.addEventListener('mouseup', stopDrawing);
-    sigCanvas.addEventListener('touchstart', startDrawing);
-    sigCanvas.addEventListener('touchmove', draw);
-    sigCanvas.addEventListener('touchend', stopDrawing);
-
-    function clearSignature() {
-      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    }
-
-    // THREE.JS ENGINE REALISTICO INDUSTRIALE
-    const container = document.getElementById('three-container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    // ILLUMINAZIONE STUDIO INDUSTRIALE
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
-
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    mainLight.position.set(5, 10, 7);
-    scene.add(mainLight);
-
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.9);
-    rimLight.position.set(-5, -5, -5);
-    scene.add(rimLight);
-
-    const pointAlertLight = new THREE.PointLight(0xef4444, 0, 10);
-    pointAlertLight.position.set(0, 2, 0);
-    scene.add(pointAlertLight);
-
-    camera.position.set(0, 2.5, 6.5);
-
-    // MATERIALI REALI
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.25 });
-    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.3 }); // Attacco ottone/sensore NMA
-    const boltMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.95, roughness: 0.15 });
-    const weldMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.5 });
-
-    const models = { tubi: new THREE.Group(), cnc: new THREE.Group(), agri: new THREE.Group(), auto: new THREE.Group() };
-    Object.values(models).forEach(g => scene.add(g));
-
-    // --- 1. MODEL: PIPELINE GAS INOX (CON ATTACCO SENSORE NMA VACANTE) ---
-    // Tubo Principale Inox
-    const pipeGeo = new THREE.CylinderGeometry(0.75, 0.75, 4.2, 32);
-    const pipeMesh = new THREE.Mesh(pipeGeo, steelMat);
-    pipeMesh.rotation.z = Math.PI / 2;
-    models.tubi.add(pipeMesh);
-
-    // Flangia Anteriore con Bulloni
-    const flangeGeo = new THREE.CylinderGeometry(1.25, 1.25, 0.25, 32);
-    const flangeMesh = new THREE.Mesh(flangeGeo, steelMat);
-    flangeMesh.rotation.z = Math.PI / 2;
-    flangeMesh.position.x = 1.8;
-    models.tubi.add(flangeMesh);
-
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const boltGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.35, 6);
-      const bolt = new THREE.Mesh(boltGeo, boltMat);
-      bolt.position.set(1.8, Math.cos(angle) * 1.0, Math.sin(angle) * 1.0);
-      bolt.rotation.z = Math.PI / 2;
-      models.tubi.add(bolt);
-    }
-
-    // Cordone di Saldatura ISO 3834
-    const weldGeo = new THREE.TorusGeometry(0.77, 0.06, 16, 32);
-    const weldMesh = new THREE.Mesh(weldGeo, weldMat);
-    weldMesh.rotation.y = Math.PI / 2;
-    weldMesh.position.x = -0.6;
-    models.tubi.add(weldMesh);
-
-    // ATTACCO SENSORE NMA (Manicotto Filettato 1/2" NPT Vacante)
-    const sensorSocketGroup = new THREE.Group();
-    const socketGeo = new THREE.CylinderGeometry(0.22, 0.25, 0.5, 16);
-    const socketMesh = new THREE.Mesh(socketGeo, brassMat);
-    socketMesh.position.set(-0.2, 0.95, 0);
-    sensorSocketGroup.add(socketMesh);
-
-    // Foro filettatura interna
-    const holeGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.52, 16);
-    const holeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
-    const holeMesh = new THREE.Mesh(holeGeo, holeMat);
-    holeMesh.position.set(-0.2, 0.95, 0);
-    sensorSocketGroup.add(holeMesh);
-    models.tubi.add(sensorSocketGroup);
-
-    // --- 2. MODEL: MANDRINO CNC ---
-    const cncBody = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.8, 3.2, 32), steelMat);
-    models.cnc.add(cncBody);
-    const cncHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.8, 16), brassMat);
-    cncHolder.position.y = -1.8;
-    models.cnc.add(cncHolder);
-
-    // --- 3. MODEL: RTK ROVER ---
-    const agriBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.7, 1.5), steelMat);
-    models.agri.add(agriBody);
-    const rtkAntenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 16), brassMat);
-    rtkAntenna.position.set(0, 0.8, 0);
-    models.agri.add(rtkAntenna);
-
-    // --- 4. MODEL: AUTOMOTIVE OBD ---
-    const autoBlock = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 1.3), steelMat);
-    models.auto.add(autoBlock);
-    const o2Socket = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.4, 16), brassMat);
-    o2Socket.position.set(0.8, 0.7, 0);
-    models.auto.add(o2Socket);
-
-    function showModel(key) {
-      Object.keys(models).forEach(k => { models[k].visible = (k === key); });
-    }
-    showModel('tubi');
-
-    function animate3D() {
-      requestAnimationFrame(animate3D);
-      controls.update();
-      if(models[currentActiveTab]) {
-        models[currentActiveTab].rotation.y += 0.004;
-      }
-      renderer.render(scene, camera);
-    }
-    animate3D();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    });
-
-    // DATA STORE & TAB SWITCHING
-    const tabsData = {
+    const domainConfigs = {
       tubi: {
-        title: '🔧 Pipeline Inox Gas (Attacco Sensori NMA Vacante)', gps: [45.0600, 7.6700], label: 'Torino Nord - Gas Duct',
-        sensorLabel: '📍 Attacco Sensore NMA P/T-01: VACANTE',
-        metrics: [
-          { t: 'Pressione Pe', v: '12.4 Bar', st: 'NOMINALE', ok: true },
-          { t: 'Portata Qv', v: '420 m³/h', st: 'NOMINALE', ok: true },
-          { t: 'Delta P', v: '0.01 Bar', st: 'OTTIMALE', ok: true },
-          { t: 'Saldatura TIG', v: '100 % OK', st: 'UNI 9737', ok: true }
-        ]
+        title: 'Tubazioni Gas Industriale (UNI 9737 / EN 10208)',
+        sub: 'Monitoraggio integrato di pressione, integrità giunto saldato TIG/Elettrofusione e portata gas.',
+        kpi1: { label: 'Pressione Metanodotto', val: '4.21 bar', sub: '<i class="fa-solid fa-circle-check"></i> Regolare (4.0 - 4.5)' },
+        kpi2: { label: 'Portata Calcolata', val: '428.5 m³/h', sub: '<i class="fa-solid fa-gauge"></i> Flusso Costante' },
+        kpi3: { label: 'Integrità Saldatura', val: '99.8%', sub: '<i class="fa-solid fa-certificate"></i> Conforme UNI 9737' },
+        kpi4: { label: 'Vibrazione Tubo (RMS)', val: '0.45 mm/s', sub: '<i class="fa-solid fa-wave-square"></i> Entro Limiti ISO' },
+        table: [
+          { name: 'Pressione di Prova (PE)', val: '6.00 bar', limit: '6.00 ± 0.2 bar', status: 'PASS', class: 'badge-pass' },
+          { name: 'Spessore Parete Tubo', val: '5.20 mm', limit: 'min 4.80 mm', status: 'PASS', class: 'badge-pass' },
+          { name: 'Tensione Giunto PE100', val: '12.4 MPa', limit: '< 18.0 MPa', status: 'PASS', class: 'badge-pass' }
+        ],
+        health: [{ label: 'Giunto Saldato PE100', pct: 98 }, { label: 'Guarnizione Flangia PN16', pct: 95 }, { label: 'Valvola di Saracinesca', pct: 92 }],
+        ai: 'Anagrafica tubazione conforme ISO 9606-1 / UNI 9737. Assenza di cali micro-pressori. Sigillatura eccellente.'
       },
-      cnc: {
-        title: '🏭 Mandrino CNC Alta Precisione (Slot Sensore RMS)', gps: [45.0703, 7.6869], label: 'Torino CNC Plant',
-        sensorLabel: '📍 Attacco Sensore NMA Vibro-RMS: VACANTE',
-        metrics: [
-          { t: 'OEE Totale', v: '97.2 %', st: 'ECCELLENTE', ok: true },
-          { t: 'RPM Mandrino', v: '18,500', st: 'HIGH SPEED', ok: true },
-          { t: 'Vibrazione RMS', v: '0.03 g', st: 'BASSA', ok: true },
-          { t: 'Temp Liquido', v: '20.8 °C', st: 'STABILE', ok: true }
-        ]
+      snc: {
+        title: 'SNC Carpenteria Inox & Strutture Metallo (EN 1090-2)',
+        sub: 'Analisi tensostrutturale in tempo reale, deflessione campate Inox AISI 304/316 e micro-vibrazioni.',
+        kpi1: { label: 'Tensostress Struttura', val: '142.5 MPa', sub: '<i class="fa-solid fa-shield"></i> Limite Snervamento 220 MPa' },
+        kpi2: { label: 'Deflessione Campata', val: '0.42 mm', sub: '<i class="fa-solid fa-ruler-combined"></i> Tolleranza L/500 OK' },
+        kpi3: { label: 'Temperatura Saldature', val: '22.8 °C', sub: '<i class="fa-solid fa-temperature-low"></i> Nessun Surriscaldamento' },
+        kpi4: { label: 'Carico Applicato', val: '1.85 Ton', sub: '<i class="fa-solid fa-weight-hanging"></i> Nominal Load' },
+        table: [
+          { name: 'Qualità Saldatura MIG/TIG', val: 'Classe EXC3', limit: 'EN 1090 EXC2/EXC3', status: 'PASS', class: 'badge-pass' },
+          { name: 'Parallelismo Montanti', val: '0.15 mm/m', limit: '< 0.50 mm/m', status: 'PASS', class: 'badge-pass' }
+        ],
+        health: [{ label: 'Pilastri Strutturali Inox', pct: 100 }, { label: 'Cordoni Saldatura TIG', pct: 96 }, { label: 'Piastre di Ancoraggio', pct: 94 }],
+        ai: 'Struttura in carpenteria Inox perfettamente stazionaria. Risposta dinamica ai carichi entro le specifiche EN 1090-2.'
       },
-      agri: {
-        title: '🚜 RTK Rover Agricoltura (Slot Sensore Suolo)', gps: [45.1500, 7.7500], label: 'Campo RTK Test',
-        sensorLabel: '📍 Attacco Sensore NMA NDVI: VACANTE',
-        metrics: [
-          { t: 'Umidità Suolo', v: '42 %', st: 'OTTIMALE', ok: true },
-          { t: 'Indice NDVI', v: '0.85', st: 'HIGH VIGOR', ok: true },
-          { t: 'Prec. RTK', v: '±1.0 cm', st: 'CENTIMETRICA', ok: true },
-          { t: 'Consumo L/h', v: '13.8 L/h', st: 'ECO MODE', ok: true }
-        ]
+      automotive: {
+        title: 'Automotive & Logistica Flotta (Telemetria OBD-II / CAN-Bus)',
+        sub: 'Monitoraggio dinamico powertrain, pressione sovralimentazione, impianto frenante e stato sospensioni.',
+        kpi1: { label: 'Regime Motore PTP', val: '2,450 RPM', sub: '<i class="fa-solid fa-gauge-high"></i> In Range di Coppia' },
+        kpi2: { label: 'Pressione Turbo / Olio', val: '2.85 bar', sub: '<i class="fa-solid fa-oil-can"></i> Pressione Rettificata' },
+        kpi3: { label: 'Temp Refrigerante', val: '88.5 °C', sub: '<i class="fa-solid fa-temperature-half"></i> Temp di Regime' },
+        kpi4: { label: 'Stato Freni & Sospensioni', val: '94.2%', sub: '<i class="fa-solid fa-car-on"></i> Usura Minima' },
+        table: [
+          { name: 'Tension Batteria Veicolo', val: '14.2 V', limit: '13.8 - 14.5 V', status: 'PASS', class: 'badge-pass' },
+          { name: 'Temp Disco Freno', val: '112 °C', limit: '< 350 °C', status: 'PASS', class: 'badge-pass' }
+        ],
+        health: [{ label: 'Gruppo Turbocompressore', pct: 93 }, { label: 'Pastiglie & Dischi Freno', pct: 89 }, { label: 'ECU CAN-Bus', pct: 100 }],
+        ai: 'Telemetria del veicolo / flotta ottimale. Rendimento termico ed elettrico regolare. Zero errori DTC nella memoria ECU.'
       },
-      auto: {
-        title: '🚗 Automotive Telemetry OBD-III (Slot Sensore EGT)', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
-        sensorLabel: '📍 Attacco Sensore NMA OBD-III: VACANTE',
-        metrics: [
-          { t: 'Regime Motore', v: '3,950 RPM', st: 'NOMINALE', ok: true },
-          { t: 'Press. Turbo', v: '1.90 Bar', st: 'BOOST OK', ok: true },
-          { t: 'Temp Olio', v: '96 °C', st: 'OTTIMALE', ok: true },
-          { t: 'Velocità', v: '124 km/h', st: 'CRUISE', ok: true }
-        ]
+      agricoltura: {
+        title: 'Agricoltura Inox & Impianti Pompaggio Idraulico',
+        sub: 'Telemetria idraulica per irrigazione ad alta pressione, elettropompe idrovore e sensori di terreno.',
+        kpi1: { label: 'Portata Pompe Idrauliche', val: '185.0 L/min', sub: '<i class="fa-solid fa-faucet-drip"></i> Portata Regolare' },
+        kpi2: { label: 'Pressione Collettore', val: '3.60 bar', sub: '<i class="fa-solid fa-water"></i> Pressurizzazione OK' },
+        kpi3: { label: 'Umidità Fluido / Terreno', val: '64.2%', sub: '<i class="fa-solid fa-droplet"></i> Target Raggiunto' },
+        kpi4: { label: 'Efficienza Motore Pompe', val: '95.8%', sub: '<i class="fa-solid fa-bolt"></i> Consumo Ridotto' },
+        table: [
+          { name: 'Assorbimento Elettrico', val: '4.8 kW', limit: '< 5.5 kW', status: 'PASS', class: 'badge-pass' },
+          { name: 'Tenuta Meccanica Pompa', val: '0.00 Drop', limit: 'Zero Perdite', status: 'PASS', class: 'badge-pass' }
+        ],
+        health: [{ label: 'Girante Pompa Centrifuga', pct: 95 }, { label: 'Valvola di Non Ritorno Inox', pct: 97 }, { label: 'Motore Trifase', pct: 98 }],
+        ai: 'Impianto di pompaggio agricolo / idraulico in perfetto bilanciamento idrodinamico. Zero cavitazione rilevata sulla girante.'
       }
     };
 
-    function switchTab(k, evt) {
-      currentActiveTab = k;
-      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-      if(evt) evt.target.classList.add('active');
-      const d = tabsData[k];
-      document.getElementById('module-title').querySelector('span').innerText = d.title;
-      document.getElementById('gps-label').innerText = d.label;
-      document.getElementById('sensor-status-tag').innerText = d.sensorLabel;
-      renderMetrics(d.metrics);
-      showModel(k);
-      map.setView(d.gps, 13);
-      marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
-      resetMetrics();
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audioCtx = new AudioClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    function renderMetrics(metrics) {
-      const c = document.getElementById('metrics-container');
-      c.innerHTML = '';
-      metrics.forEach(m => {
-        let stClass = 'st-ok';
-        if (m.st.includes('WARNING')) stClass = 'st-warn';
-        if (m.st.includes('CRITICO')) stClass = 'st-crit';
-        c.innerHTML += `
-          <div class="f1-box">
-            <span class="f1-title">${m.t}</span>
-            <span class="f1-val">${m.v}</span>
-            <span class="f1-status ${stClass}">${m.st}</span>
-          </div>`;
+    ['click', 'touchstart', 'keydown'].forEach(evt => window.addEventListener(evt, initAudioContext, { once: false }));
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const badge = document.getElementById('audioStatusBadge');
+      const icon = document.getElementById('audioIcon');
+      const text = document.getElementById('audioText');
+      if (audioEnabled) {
+        badge.classList.remove('muted'); icon.className = 'fa-solid fa-volume-high'; text.innerText = 'Audio Attivo';
+        playBeep(880, 'sine', 0.1);
+      } else {
+        badge.classList.add('muted'); icon.className = 'fa-solid fa-volume-xmark'; text.innerText = 'Audio Disattivato';
+      }
+    }
+
+    function playBeep(freq = 600, type = 'sine', duration = 0.15) {
+      if (!audioEnabled) return;
+      initAudioContext();
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function testAlarm() {
+      if (!audioEnabled) toggleAudio();
+      initAudioContext();
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(500, now);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.25);
+        osc.frequency.linearRampToValueAtTime(500, now + 0.5);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + 0.5);
+      } catch (e) {}
+    }
+
+    let scene, camera, renderer, controls, currentMeshGroup = null;
+
+    function init3D() {
+      const container = document.querySelector('.viewport-card');
+      const canvas = document.getElementById('webgl-canvas');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0e17);
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(5, 4, 7);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const light = new THREE.DirectionalLight(0x00f2fe, 1.2);
+      light.position.set(10, 15, 10);
+      scene.add(light);
+
+      const grid = new THREE.GridHelper(20, 20, 0x00f2fe, 0x1e293b);
+      grid.position.y = -1.5;
+      scene.add(grid);
+
+      loadDomainModel('tubi');
+      animate3D();
+    }
+
+    function clearCurrentModel() {
+      if (currentMeshGroup) {
+        scene.remove(currentMeshGroup);
+        currentMeshGroup = null;
+      }
+    }
+
+    function loadDomainModel(key) {
+      clearCurrentModel();
+      currentMeshGroup = new THREE.Group();
+
+      const metalMat = new THREE.MeshStandardMaterial({ color: 0x8899a6, metalness: 0.85, roughness: 0.25, wireframe: isWireframe });
+      const shinyInoxMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.15, wireframe: isWireframe });
+      const accentMat = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.4, wireframe: isWireframe });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.5 });
+
+      if (key === 'tubi') {
+        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 5, 32), metalMat);
+        pipe.rotation.z = Math.PI / 2;
+        currentMeshGroup.add(pipe);
+
+        [-2.3, 2.3].forEach(x => {
+          const flange = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.25, 24), darkMat);
+          flange.rotation.z = Math.PI / 2; flange.position.x = x;
+          currentMeshGroup.add(flange);
+        });
+
+        const weld = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.05, 16, 32), accentMat);
+        weld.rotation.y = Math.PI / 2;
+        currentMeshGroup.add(weld);
+
+      } else if (key === 'snc') {
+        const col1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.5, 0.3), shinyInoxMat); col1.position.set(-2, 0.25, 0);
+        const col2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.5, 0.3), shinyInoxMat); col2.position.set(2, 0.25, 0);
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.3, 0.3), shinyInoxMat); beam.position.set(0, 1.9, 0);
+        const diag = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.15, 0.15), shinyInoxMat); diag.position.set(0, 0.25, 0); diag.rotation.z = 0.72;
+        currentMeshGroup.add(col1, col2, beam, diag);
+
+      } else if (key === 'automotive') {
+        const rail1 = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 0.2), darkMat); rail1.position.set(0, 0, -0.8);
+        const rail2 = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 0.2), darkMat); rail2.position.set(0, 0, 0.8);
+        const engine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 1.2), metalMat); engine.position.set(-1.2, 0.4, 0);
+        currentMeshGroup.add(rail1, rail2, engine);
+
+        [[-1.5, -1.2], [-1.5, 1.2], [1.5, -1.2], [1.5, 1.2]].forEach(pos => {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.3, 24), darkMat);
+          wheel.rotation.x = Math.PI / 2; wheel.position.set(pos[0], -0.2, pos[1]);
+          currentMeshGroup.add(wheel);
+        });
+
+      } else if (key === 'agricoltura') {
+        const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 2.2, 24), darkMat);
+        motor.rotation.z = Math.PI / 2; motor.position.set(-1.0, 0.2, 0);
+        const pump = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.6, 24), shinyInoxMat);
+        pump.rotation.x = Math.PI / 2; pump.position.set(0.6, 0.2, 0);
+        const pipeOut = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2.0, 16), shinyInoxMat);
+        pipeOut.position.set(0.6, 1.3, 0);
+        currentMeshGroup.add(motor, pump, pipeOut);
+      }
+
+      scene.add(currentMeshGroup);
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      if (controls) controls.update();
+      if (currentMeshGroup && autoRotate) currentMeshGroup.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+
+    function resetCamera() { camera.position.set(5, 4, 7); controls.target.set(0, 0, 0); }
+    function toggleAutoRotate() { autoRotate = !autoRotate; playBeep(700, 'sine', 0.08); }
+    function toggleWireframe() {
+      isWireframe = !isWireframe;
+      if (currentMeshGroup) {
+        currentMeshGroup.traverse(c => { if (c.material) c.material.wireframe = isWireframe; });
+      }
+      playBeep(800, 'sine', 0.08);
+    }
+
+    function switchDomain(key) {
+      if (!domainConfigs[key]) return;
+      currentDomain = key;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      const conf = domainConfigs[key];
+      document.getElementById('domainTitle').innerHTML = `<i class="fa-solid fa-microchip"></i> ${conf.title}`;
+      document.getElementById('domainSub').innerText = conf.sub;
+
+      document.getElementById('kpi1-label').innerText = conf.kpi1.label; document.getElementById('kpi1-val').innerText = conf.kpi1.val; document.getElementById('kpi1-sub').innerHTML = conf.kpi1.sub;
+      document.getElementById('kpi2-label').innerText = conf.kpi2.label; document.getElementById('kpi2-val').innerText = conf.kpi2.val; document.getElementById('kpi2-sub').innerHTML = conf.kpi2.sub;
+      document.getElementById('kpi3-label').innerText = conf.kpi3.label; document.getElementById('kpi3-val').innerText = conf.kpi3.val; document.getElementById('kpi3-sub').innerHTML = conf.kpi3.sub;
+      document.getElementById('kpi4-label').innerText = conf.kpi4.label; document.getElementById('kpi4-val').innerText = conf.kpi4.val; document.getElementById('kpi4-sub').innerHTML = conf.kpi4.sub;
+
+      document.getElementById('toleranceTableBody').innerHTML = conf.table.map(r => `<tr><td><b>${r.name}</b></td><td>${r.val}</td><td>${r.limit}</td><td><span class="badge-status ${r.class}">${r.status}</span></td></tr>`).join('');
+      document.getElementById('healthContainer').innerHTML = conf.health.map(i => `<div class="health-item"><div class="health-info"><span>${i.label}</span><span style="font-weight:700; color:var(--accent-cyan);">${i.pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${i.pct}%;"></div></div></div>`).join('');
+      document.getElementById('aiDiagnosisText').innerText = conf.ai;
+
+      loadDomainModel(key);
+      playBeep(900, 'sine', 0.12);
+    }
+
+    let chartCanvas, chartCtx, chartBuffer = Array(50).fill(50);
+    function initChart() {
+      chartCanvas = document.getElementById('telemetryCanvas');
+      chartCtx = chartCanvas.getContext('2d');
+      chartCanvas.width = chartCanvas.parentElement.clientWidth;
+      chartCanvas.height = chartCanvas.parentElement.clientHeight;
+      setInterval(updateChartData, 200);
+      drawChart();
+    }
+
+    function updateChartData() {
+      chartBuffer.shift();
+      const last = chartBuffer[chartBuffer.length - 1];
+      chartBuffer.push(Math.min(Math.max(last + (Math.random() - 0.48) * 8, 25), 75));
+      const fft = document.getElementById('fftContainer');
+      if (fft) fft.innerHTML = Array.from({length: 16}).map(() => `<div class="fft-bar" style="height:${Math.floor(Math.random()*80)+15}%;"></div>`).join('');
+    }
+
+    function drawChart() {
+      requestAnimationFrame(drawChart);
+      if (!chartCtx || !chartCanvas) return;
+      const w = chartCanvas.width, h = chartCanvas.height;
+      chartCtx.clearRect(0, 0, w, h);
+
+      chartCtx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+      chartCtx.setLineDash([4, 4]);
+      chartCtx.beginPath(); chartCtx.moveTo(0, h * 0.2); chartCtx.lineTo(w, h * 0.2); chartCtx.stroke();
+      chartCtx.setLineDash([]);
+
+      const step = w / (chartBuffer.length - 1);
+      chartCtx.beginPath(); chartCtx.strokeStyle = '#00f2fe'; chartCtx.lineWidth = 2.5;
+      chartBuffer.forEach((val, i) => {
+        const x = i * step, y = h - (val / 100) * h;
+        if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
       });
+      chartCtx.stroke();
     }
 
-    function triggerFaultInjection() {
-      playAlarmSound();
-      steelMat.color.setHex(0xef4444);
-      pointAlertLight.intensity = 3;
-      const activeData = tabsData[currentActiveTab];
-      activeData.metrics[0].v = '99.9 OVER';
-      activeData.metrics[0].st = 'CRITICO High P';
-      activeData.metrics[1].st = 'WARNING Delta';
-      renderMetrics(activeData.metrics);
-      document.getElementById('ai-status').innerHTML = '<span>🚨</span><div><b>AI COPILOT ALERT:</b> Rilevata anomalia di sovra-pressione / stress termico. Allarme acustico e visivo attivato!</div>';
-    }
-
-    function resetMetrics() {
-      steelMat.color.setHex(0x94a3b8);
-      pointAlertLight.intensity = 0;
-      document.getElementById('ai-status').innerHTML = '<span>🤖</span><div><b>AI COPILOT DIAGNOSTICO:</b> Sistema in operatività nominale. Tolleranze meccaniche e di pressione ISO/UNI rispettate.</div>';
-      const d = tabsData[currentActiveTab];
-      renderMetrics(d.metrics);
-    }
-
-    // MAPPA LEAFLET
-    const map = L.map('map', { preferCanvas: true }).setView([45.0600, 7.6700], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
-    const marker = L.marker([45.0600, 7.6700]).addTo(map).bindPopup('Torino Nord - Gas Duct').openPopup();
-
-    // CHART LIVE
-    const ctx = document.getElementById('liveChart').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25'],
-        datasets: [{ label: 'Frequenza (Hz)', data: [3800, 3860, 3950, 3900, 3950, 3980], borderColor: '#0284c7', backgroundColor: 'rgba(2,132,199,0.12)', fill: true, tension: 0.35 }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#1e293b' } }, x: { grid: { display: false } } } }
-    });
-
-    // CHAT ENGINE
-    function sendMsg(e) {
-      if(e) e.preventDefault();
-      const input = document.getElementById('msg');
-      const user = document.getElementById('username').value || 'Operatore';
-      if (input.value.trim()) {
-        socket.emit('chat-message', { user, text: input.value.trim() });
-        input.value = '';
-      }
-    }
-
-    socket.on('chat-message', d => {
-      const u = d.user || 'Anonimo';
-      const me = u === (document.getElementById('username').value || 'Operatore');
-      const b = document.getElementById('chat-box');
-      let content = '';
-      if (d.text) content += `<div>${d.text}</div>`;
-      if (d.file) content += `<div style="margin-top:4px;">📎 Allegato: <a href="${d.file}" download="${d.fileName || 'file'}" style="color:#38bdf8; font-weight:bold;">${d.fileName || 'Scarica Allegato'}</a></div>`;
-      b.innerHTML += `<div class="chat-msg ${me ? 'me' : ''}"><b>${u}:</b> ${content}</div>`;
-      b.scrollTop = b.scrollHeight;
-    });
-
-    function sendFile(input) {
-      const user = document.getElementById('username').value || 'Operatore';
-      const file = input.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) { socket.emit('chat-message', { user, file: e.target.result, fileName: file.name }); };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    // PDF GENERATION DI ALTO LIVELLO PROFESSIONALE (PDFMAKE REVISIONATO)
-    function downloadGeneratedPDF() {
-      const activeData = tabsData[currentActiveTab];
-      const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
-      const sigDataUrl = sigCanvas.toDataURL();
-      const reportId = `NMA-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
-      const currentDate = new Date().toLocaleString('it-IT');
-
-      const docDefinition = {
+    function exportPDF() {
+      const conf = domainConfigs[currentDomain];
+      const docDef = {
         pageSize: 'A4',
-        pageMargins: [36, 36, 36, 45],
-        header: function(currentPage, pageCount) {
-          return {
-            margin: [36, 12, 36, 0],
-            columns: [
-              { text: 'N.M.A. SYSTEMS & INDUSTRIAL ENGINEERING — TECHNICAL INSPECTION REPORT', fontSize: 7, bold: true, color: '#64748b' },
-              { text: `Doc Ref: ${reportId} | Pagina ${currentPage} di ${pageCount}`, alignment: 'right', fontSize: 7, color: '#64748b' }
-            ]
-          };
-        },
         content: [
-          // Banner di Testata Industriale
-          {
-            table: {
-              widths: ['*'],
-              body: [[
-                {
-                  fillColor: '#0f172a',
-                  margin: [16, 14, 16, 14],
-                  stack: [
-                    {
-                      columns: [
-                        { text: 'N.M.A. SYSTEMS', fontSize: 20, bold: true, color: '#38bdf8', letterSpacing: 1 },
-                        { text: 'RAPPORTO UFFICIALE DI COLLAUDO', alignment: 'right', fontSize: 11, bold: true, color: '#ffffff' }
-                      ]
-                    },
-                    { text: 'SUITE ENTERPRISE PER COLLAUDO MECCANICO, IMPLANTISTICO & DIGITAL TWIN 3D', fontSize: 8.5, color: '#94a3b8', margin: [0, 4, 0, 0] }
-                  ]
-                }
-              ]]
-            },
-            layout: 'noBorders'
-          },
-          { text: '\n' },
-
-          // Tabella Metadati dell'Impianto
-          {
-            table: {
-              widths: ['25%', '25%', '25%', '25%'],
-              body: [
-                [
-                  { text: 'CODICE REPORT', style: 'metaHeader' },
-                  { text: 'DATA E ORA', style: 'metaHeader' },
-                  { text: 'OPERATORE TECNICO', style: 'metaHeader' },
-                  { text: 'NORMATIVA DI RIF.', style: 'metaHeader' }
-                ],
-                [
-                  { text: reportId, style: 'metaValue' },
-                  { text: currentDate, style: 'metaValue' },
-                  { text: operatorName, style: 'metaValue' },
-                  { text: 'ISO 9001 / UNI 9737', style: 'metaValue' }
-                ]
-              ]
-            },
-            layout: {
-              hLineWidth: function() { return 0.5; },
-              vLineWidth: function() { return 0.5; },
-              hLineColor: function() { return '#cbd5e1'; },
-              vLineColor: function() { return '#cbd5e1'; }
-            }
-          },
-          { text: '\n' },
-
-          // Titolo Modulo e Collaudo
-          { text: `MODULO ISPEZIONATO: ${activeData.title.toUpperCase()}`, fontSize: 12, bold: true, color: '#0f172a' },
-          { text: `Ubicazione Nodo RTK: ${activeData.label} | Stato Slot Sensore: VACANTE (PRONTO PER INSTALLAZIONE NMA)`, fontSize: 9, color: '#475569', margin: [0, 2, 0, 10] },
-
-          // Tabella Parametri Telemetrici Live
-          {
-            table: {
-              headerRows: 1,
-              widths: ['35%', '25%', '20%', '20%'],
-              body: [
-                [
-                  { text: 'PARAMETRO DI MISURA', style: 'tableHeader' },
-                  { text: 'VALORE RILEVATO', style: 'tableHeader' },
-                  { text: 'TOLLERANZA', style: 'tableHeader' },
-                  { text: 'STATO', style: 'tableHeader' }
-                ],
-                ...activeData.metrics.map(m => [
-                  { text: m.t, fontSize: 9.5, bold: true, color: '#1e293b' },
-                  { text: m.v, fontSize: 9.5, fontFamily: 'SF Mono', color: '#0284c7', bold: true },
-                  { text: '± 0.5%', fontSize: 9, color: '#64748b' },
-                  { 
-                    text: m.st, 
-                    fontSize: 8.5, 
-                    bold: true, 
-                    color: m.st.includes('CRITICO') ? '#b91c1c' : (m.st.includes('WARNING') ? '#a16207' : '#15803d'),
-                    fillColor: m.st.includes('CRITICO') ? '#fee2e2' : (m.st.includes('WARNING') ? '#fef9c3' : '#dcfce7')
-                  }
-                ])
-              ]
-            },
-            layout: 'lightHorizontalLines'
-          },
-          { text: '\n' },
-
-          // Box Diagnostica AI Copilot
-          {
-            table: {
-              widths: ['*'],
-              body: [[
-                {
-                  fillColor: '#f0f9ff',
-                  borderColor: ['#0284c7', '#0284c7', '#0284c7', '#0284c7'],
-                  margin: [10, 10, 10, 10],
-                  stack: [
-                    { text: '🤖 DIAGNOSTICA ED AUDIT TRAIL AUTOMATICO (AI COPILOT NMA)', fontSize: 10, bold: true, color: '#0369a1' },
-                    { text: 'Tutti i parametri fisici sono stati campionati in tempo reale dal Digital Twin 3D. L\'integrità strutturale del componente e le tolleranze di giunzione rispecchiano i criteri di conformità della direttiva attrezzature in pressione (PED) e dello standard di saldatura UNI EN ISO 3834-2.', fontSize: 8.5, color: '#334155', margin: [0, 4, 0, 0] }
-                  ]
-                }
-              ]]
-            }
-          },
-          { text: '\n\n' },
-
-          // Firma Operatore e Timbro di Convalida
-          {
-            columns: [
-              {
-                width: '55%',
-                stack: [
-                  { text: 'ATTESTATO DI CONFORMITÀ E VALIDAZIONE', fontSize: 9, bold: true, color: '#0f172a' },
-                  { text: 'Si certifica che le rilevazioni telemetriche e le prove di stress termico/meccanico sono state eseguite secondo i protocolli ufficiali di sicurezza N.M.A. Systems.', fontSize: 8, color: '#64748b', margin: [0, 3, 0, 0] }
-                ]
-              },
-              {
-                width: '45%',
-                stack: [
-                  { text: `Firma Operatore Qualificato: (${operatorName})`, fontSize: 8.5, bold: true, alignment: 'right' },
-                  { image: sigDataUrl, width: 140, alignment: 'right', margin: [0, 4, 0, 0] }
-                ]
-              }
-            ]
-          }
+          { text: 'N.M.A. SYSTEMS - CERTIFICATO TELEMETRICO', style: 'header' },
+          { text: `Ambiente: ${conf.title}`, style: 'subheader' },
+          { text: `Data: ${new Date().toLocaleString('it-IT')}\n\n` },
+          { text: conf.ai }
         ],
-        styles: {
-          metaHeader: { fontSize: 7.5, bold: true, color: '#64748b', fillColor: '#f8fafc' },
-          metaValue: { fontSize: 8.5, bold: true, color: '#0f172a' },
-          tableHeader: { fontSize: 8.5, bold: true, color: '#ffffff', fillColor: '#1e293b' }
-        }
+        styles: { header: { fontSize: 16, bold: true }, subheader: { fontSize: 12, bold: true } }
       };
-
-      pdfMake.createPdf(docDefinition).download(`${reportId}_${currentActiveTab}.pdf`);
+      pdfMake.createPdf(docDef).download(`NMA_Report_${currentDomain}.pdf`);
+      playBeep(1000, 'sine', 0.2);
     }
 
-    switchTab('tubi', null);
+    window.addEventListener('DOMContentLoaded', () => {
+      init3D(); initChart(); switchDomain('tubi');
+    });
   </script>
 </body>
 </html>
