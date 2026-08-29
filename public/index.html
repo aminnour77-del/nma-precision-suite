@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>N.M.A. SYSTEMS - F1 Telemetry & Comms</title>
+  <title>N.M.A. SYSTEMS - Enterprise Telemetry & Real-Time Comms</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -43,20 +43,22 @@
     button { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
     .btn-green { background: #16a34a; }
     .btn-red { background: #dc2626; }
-    
-    .video-container { display: flex; gap: 8px; margin-bottom: 8px; }
-    video { width: 50%; height: 130px; border-radius: 6px; background: #000; object-fit: cover; }
-    
-    .incoming-call { display: none; background: #022c22; padding: 10px; border-radius: 6px; margin-bottom: 8px; text-align: center; border: 2px solid #10b981; animation: pulse 1s infinite alternate; }
-    @keyframes pulse { 0% { border-color: #10b981; } 100% { border-color: #f59e0b; } }
 
     .iso-badge { display: inline-block; background: #1e293b; color: #38bdf8; font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-right: 3px; margin-bottom:3px; font-weight: bold; }
     .pdf-actions { display: flex; gap: 6px; margin-top: 6px; }
 
+    /* WebRTC Video Overlay */
+    #video-container { display: none; background: #000; border-radius: 6px; overflow: hidden; position: relative; height: 180px; margin-bottom: 8px; }
+    #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
+    #localVideo { width: 80px; height: 60px; object-fit: cover; position: absolute; bottom: 8px; right: 8px; border: 2px solid #0284c7; border-radius: 4px; background: #1e293b; }
+    
+    #incoming-call-banner { display: none; background: #16a34a; color: white; padding: 8px; border-radius: 6px; margin-bottom: 8px; text-align: center; font-weight: bold; font-size: 12px; animation: pulse 1s infinite alternate; }
+    @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; } }
+
     #chart-modal { display: none; position: absolute; top: 40px; left: 12px; right: 12px; background: #0f172a; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
   </style>
 </head>
-<body onclick="unlockAudio()">
+<body>
 
   <header>
     <div>
@@ -74,6 +76,14 @@
     <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Automation</button>
     <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura Precisione</button>
     <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Fleet</button>
+  </div>
+
+  <div id="incoming-call-banner">
+    <span id="caller-name">Chiamata In Arrivo...</span>
+    <div style="margin-top:6px; display:flex; gap:8px; justify-content:center;">
+      <button onclick="acceptCall()" class="btn-green">Accetta</button>
+      <button onclick="rejectCall()" class="btn-red">Rifiuta</button>
+    </div>
   </div>
 
   <div class="grid">
@@ -118,33 +128,23 @@
     </div>
 
     <div class="card">
-      <h2>📞 N.M.A. COMMS - Linea Diretta Criptata</h2>
-      <div class="incoming-call" id="incomingCallBox">
-        <span id="callerName" style="font-weight:bold; color:#4ade80;">📞 Chiamata in arrivo...</span>
-        <div style="margin-top:8px; display:flex; gap:8px; justify-content:center;">
-          <button onclick="acceptCall()" class="btn-green">📞 Rispondi</button>
-          <button onclick="endCall()" class="btn-red">❌ Rifiuta</button>
-        </div>
-      </div>
-
-      <div class="video-container">
-        <video id="localVideo" autoplay playsinline muted></video>
-        <video id="remoteVideo" autoplay playsinline></video>
-      </div>
-
-      <div style="display:flex; gap:6px;">
-        <button onclick="startCall(false)" style="flex:1;">🎤 Chiamata Audio</button>
-        <button onclick="startCall(true)" class="btn-green" style="flex:1;">📹 Videochiamata</button>
-        <button onclick="endCall()" class="btn-red" id="btn-end" style="display:none; flex:1;">🔴 Termina</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>💬 Chat Tecnica & Media</h2>
+      <h2>💬 Chat Tecnica & WebRTC Comms</h2>
       <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
         <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
         <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:120px; padding:3px;">
       </div>
+
+      <div id="video-container">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <video id="localVideo" autoplay playsinline muted></video>
+      </div>
+
+      <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <button onclick="startCall(false)" style="flex:1; background:#0284c7;">📞 Audio</button>
+        <button onclick="startCall(true)" style="flex:1; background:#0d9488;">📹 Video</button>
+        <button onclick="endCall()" class="btn-red" style="flex:1;">🔴 Termina</button>
+      </div>
+
       <div id="chat-box"></div>
       <form onsubmit="sendMsg(event)" class="chat-input-group">
         <input type="text" id="msg" placeholder="Scrivi un messaggio..." style="flex:1;">
@@ -173,47 +173,20 @@
   </div>
 
   <script>
-    const socket = io({
-      transports: ['websocket', 'polling'],
-      reconnection: true
-    });
+    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
 
-    let audioCtx = null;
-    let ringtoneInterval = null;
     let currentActiveTab = 'auto';
     let gpsInterval = null;
     let animId = null;
 
-    function unlockAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
+    // WebRTC state
+    let localStream = null;
+    let peerConnection = null;
+    let pendingOffer = null;
+    let audioContext = null;
+    let ringtoneOsc = null;
 
-    function startRingtone() {
-      unlockAudio();
-      stopRingtone();
-      ringtoneInterval = setInterval(() => {
-        if (!audioCtx) return;
-        try {
-          let osc1 = audioCtx.createOscillator();
-          let osc2 = audioCtx.createOscillator();
-          let gain = audioCtx.createGain();
-          osc1.type = 'sine'; osc2.type = 'sine';
-          osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
-          osc2.frequency.setValueAtTime(480, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-          osc1.connect(gain); osc2.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc1.start(); osc2.start();
-          osc1.stop(audioCtx.currentTime + 1.0);
-          osc2.stop(audioCtx.currentTime + 1.0);
-        } catch(e){}
-      }, 2200);
-    }
-
-    function stopRingtone() {
-      if (ringtoneInterval) { clearInterval(ringtoneInterval); ringtoneInterval = null; }
-    }
+    const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
     function updateUsername() {
       const u = document.getElementById('username').value || 'Operatore';
@@ -235,6 +208,7 @@
       }
     }
 
+    // Tab Telemetria
     const tabsData = {
       tubi: {
         title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
@@ -346,13 +320,11 @@
       document.getElementById('chart-modal').style.display = 'none';
     }
 
+    // Canvas Simulations
     function changeTutorialVideo() {
       const select = document.getElementById('videoSelect');
-      if (select.value === 'sim2') {
-        startSensorCanvasSimulation();
-      } else {
-        startWeldingCanvasSimulation();
-      }
+      if (select.value === 'sim2') startSensorCanvasSimulation();
+      else startWeldingCanvasSimulation();
     }
 
     function startWeldingCanvasSimulation() {
@@ -402,9 +374,122 @@
       }
       draw();
     }
-
     startWeldingCanvasSimulation();
 
+    // WebRTC Logic
+    function startRingtone() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        ringtoneOsc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        ringtoneOsc.type = 'sine';
+        ringtoneOsc.frequency.setValueAtTime(440, audioContext.currentTime);
+        gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+        ringtoneOsc.connect(gain);
+        gain.connect(audioContext.destination);
+        ringtoneOsc.start();
+      } catch(e){}
+    }
+
+    function stopRingtone() {
+      if (ringtoneOsc) { try { ringtoneOsc.stop(); } catch(e){} ringtoneOsc = null; }
+    }
+
+    async function startCall(isVideo) {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('video-container').style.display = 'block';
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+        peerConnection.ontrack = e => {
+          document.getElementById('remoteVideo').srcObject = e.streams[0];
+        };
+
+        peerConnection.onicecandidate = e => {
+          if (e.candidate) socket.emit('ice-candidate', { candidate: e.candidate });
+        };
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        const user = document.getElementById('username').value || 'Operatore';
+        socket.emit('call-user', { offer, user, isVideo });
+      } catch (err) {
+        alert("Errore accesso Microfono/Videocamera: " + err.message);
+      }
+    }
+
+    socket.on('call-made', async data => {
+      pendingOffer = data;
+      document.getElementById('caller-name').innerText = `Chiamata ${data.isVideo ? 'Video' : 'Audio'} in arrivo da: ${data.user}`;
+      document.getElementById('incoming-call-banner').style.display = 'block';
+      startRingtone();
+    });
+
+    async function acceptCall() {
+      stopRingtone();
+      document.getElementById('incoming-call-banner').style.display = 'none';
+      if (!pendingOffer) return;
+
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: pendingOffer.isVideo, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('video-container').style.display = 'block';
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+        peerConnection.ontrack = e => {
+          document.getElementById('remoteVideo').srcObject = e.streams[0];
+        };
+
+        peerConnection.onicecandidate = e => {
+          if (e.candidate) socket.emit('ice-candidate', { candidate: e.candidate });
+        };
+
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(pendingOffer.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        socket.emit('make-answer', { answer, to: pendingOffer.socket });
+      } catch(err) {
+        alert("Impossibile accettare chiamata: " + err.message);
+      }
+    }
+
+    function rejectCall() {
+      stopRingtone();
+      document.getElementById('incoming-call-banner').style.display = 'none';
+      pendingOffer = null;
+    }
+
+    socket.on('answer-made', async data => {
+      if (peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+      }
+    });
+
+    socket.on('ice-candidate', async data => {
+      if (peerConnection && data.candidate) {
+        try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e){}
+      }
+    });
+
+    function endCall() {
+      stopRingtone();
+      if (peerConnection) { peerConnection.close(); peerConnection = null; }
+      if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+      document.getElementById('video-container').style.display = 'none';
+      document.getElementById('incoming-call-banner').style.display = 'none';
+      socket.emit('end-call');
+    }
+
+    socket.on('call-ended', () => { endCall(); });
+
+    // Chat
     function sendMsg(e) {
       if(e) e.preventDefault();
       const input = document.getElementById('msg');
@@ -424,11 +509,11 @@
       if (d.text) content += `<div>${d.text}</div>`;
       if (d.file) content += `<div style="margin-top:4px;">📎 Allegato: <a href="${d.file}" download="${d.fileName || 'file'}" style="color:#38bdf8; font-weight:bold;">${d.fileName || 'Scarica Allegato'}</a></div>`;
       b.innerHTML += `<div class="chat-msg ${me ? 'me' : ''}"><b>${u}:</b> ${content}</div>`;
-      
       if (b.children.length > 40) b.removeChild(b.firstChild);
       b.scrollTop = b.scrollHeight;
     });
 
+    // PDF Engine
     function getPDFDocDefinition() {
       const activeData = tabsData[currentActiveTab];
       const tableRows = [[{ text: 'Parametro Misurato', bold: true, fillColor: '#1e293b', color: '#38bdf8' }, { text: 'Valore Rilevato', bold: true, fillColor: '#1e293b', color: '#38bdf8' }]];
@@ -479,164 +564,6 @@
         reader.readAsDataURL(file);
       }
     }
-
-    // --- LOGICA WEBRTC PER CHIAMATE E VIDEOCHIAMATE MOBILE ---
-    let localStream = null, peerConnection = null, pendingOffer = null, targetSocketId = null, callIsVideo = false;
-    let iceCandidatesQueue = [];
-    
-    const config = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
-    };
-
-    async function getOptimizedMedia(video) {
-      const constraints = {
-        audio: { echoCancellation: true, noiseSuppression: true },
-        video: video ? { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 360 } } : false
-      };
-      return await navigator.mediaDevices.getUserMedia(constraints);
-    }
-
-    async function startCall(video) {
-      endCall();
-      callIsVideo = video;
-      unlockAudio();
-      try {
-        localStream = await getOptimizedMedia(video);
-        const lVideo = document.getElementById('localVideo');
-        lVideo.srcObject = localStream;
-        lVideo.style.display = video ? 'block' : 'none';
-        lVideo.play().catch(()=>{});
-
-        document.getElementById('btn-end').style.display = 'block';
-
-        peerConnection = new RTCPeerConnection(config);
-        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-
-        peerConnection.ontrack = e => {
-          const rVideo = document.getElementById('remoteVideo');
-          rVideo.srcObject = e.streams[0];
-          rVideo.style.display = video ? 'block' : 'none';
-          rVideo.play().catch(()=>{});
-        };
-
-        peerConnection.onicecandidate = e => {
-          if (e.candidate && targetSocketId) {
-            socket.emit('ice-candidate', { candidate: e.candidate, to: targetSocketId });
-          }
-        };
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        socket.emit('call-user', { offer, isVideo: video, username: document.getElementById('username').value });
-      } catch (e) {
-        alert("Errore accesso fotocamera/microfono: " + e.message);
-      }
-    }
-
-    socket.on('call-made', d => {
-      pendingOffer = d.offer;
-      targetSocketId = d.socket;
-      callIsVideo = d.isVideo;
-      iceCandidatesQueue = [];
-      
-      startRingtone();
-      triggerNotif(`📞 CHIAMATA DA ${d.username.toUpperCase()}`, "Tocca per rispondere");
-      
-      document.getElementById('callerName').innerText = `📞 CHIAMATA IN ARRIVO DA ${d.username}...`;
-      document.getElementById('incomingCallBox').style.display = 'block';
-    });
-
-    async function acceptCall() {
-      stopRingtone();
-      document.getElementById('incomingCallBox').style.display = 'none';
-      document.getElementById('btn-end').style.display = 'block';
-      unlockAudio();
-
-      try {
-        localStream = await getOptimizedMedia(callIsVideo);
-        const lVideo = document.getElementById('localVideo');
-        lVideo.srcObject = localStream;
-        lVideo.style.display = callIsVideo ? 'block' : 'none';
-        lVideo.play().catch(()=>{});
-
-        peerConnection = new RTCPeerConnection(config);
-        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-
-        peerConnection.ontrack = e => {
-          const rVideo = document.getElementById('remoteVideo');
-          rVideo.srcObject = e.streams[0];
-          rVideo.style.display = callIsVideo ? 'block' : 'none';
-          rVideo.play().catch(()=>{});
-        };
-
-        peerConnection.onicecandidate = e => {
-          if (e.candidate && targetSocketId) {
-            socket.emit('ice-candidate', { candidate: e.candidate, to: targetSocketId });
-          }
-        };
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(pendingOffer));
-        
-        while (iceCandidatesQueue.length > 0) {
-          let cand = iceCandidatesQueue.shift();
-          await peerConnection.addIceCandidate(cand);
-        }
-
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        socket.emit('make-answer', { answer, to: targetSocketId });
-      } catch (e) {
-        alert("Errore accettazione chiamata: " + e.message);
-      }
-    }
-
-    function endCall() {
-      stopRingtone();
-      if (peerConnection) {
-        peerConnection.ontrack = null;
-        peerConnection.onicecandidate = null;
-        peerConnection.close();
-        peerConnection = null;
-      }
-      if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-        localStream = null;
-      }
-      const lVideo = document.getElementById('localVideo');
-      const rVideo = document.getElementById('remoteVideo');
-      if (lVideo) lVideo.srcObject = null;
-      if (rVideo) rVideo.srcObject = null;
-      document.getElementById('incomingCallBox').style.display = 'none';
-      document.getElementById('btn-end').style.display = 'none';
-      socket.emit('end-call', {});
-    }
-
-    socket.on('call-ended', () => endCall());
-    
-    socket.on('answer-made', async d => {
-      targetSocketId = d.socket;
-      if (peerConnection) {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(d.answer));
-        while (iceCandidatesQueue.length > 0) {
-          let cand = iceCandidatesQueue.shift();
-          await peerConnection.addIceCandidate(cand);
-        }
-      }
-    });
-
-    socket.on('ice-candidate', async d => {
-      let cand = new RTCIceCandidate(d.candidate);
-      if (peerConnection && peerConnection.remoteDescription) {
-        await peerConnection.addIceCandidate(cand);
-      } else {
-        iceCandidatesQueue.push(cand);
-      }
-    });
   </script>
 </body>
 </html>
