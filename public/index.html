@@ -9,9 +9,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Three.js + Loaders + Controls -->
+  <!-- Three.js + Controls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
   <!-- ECharts & PDFMake -->
@@ -34,9 +33,9 @@
     }
     #three-canvas-container {
       width: 100%;
-      height: 320px;
+      height: 280px;
       border-radius: 8px;
-      background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+      background: radial-gradient(circle at center, #0b1329 0%, #030712 100%);
       position: relative;
       overflow: hidden;
       border: 1px solid #1e293b;
@@ -47,9 +46,10 @@
       left: 12px;
       font-size: 11px;
       color: #38bdf8;
-      background: rgba(3, 7, 18, 0.7);
-      padding: 4px 8px;
+      background: rgba(3, 7, 18, 0.85);
+      padding: 4px 10px;
       border-radius: 4px;
+      border: 1px solid #334155;
       pointer-events: none;
     }
   </style>
@@ -78,7 +78,7 @@
     <div class="card">
       <h2 id="module-title">🚗 Automotive Telemetry OBD-III</h2>
       <div class="f1-grid" id="metrics-container"></div>
-      <div id="echarts2d" style="width: 100%; height: 300px;"></div>
+      <div id="echarts2d" style="width: 100%; height: 290px;"></div>
     </div>
 
     <!-- Mappa Tattica GPS -->
@@ -89,16 +89,16 @@
         <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
         <div class="f1-box"><span class="f1-title">Stato</span><span class="f1-val" style="color:#4ade80;">TRACKING</span></div>
       </div>
-      <div id="map" style="height: 300px; border-radius: 6px;"></div>
+      <div id="map" style="height: 290px; border-radius: 6px;"></div>
     </div>
   </div>
 
   <div class="grid-bottom">
-    <!-- Gemello Digitale 3D con OrbitControls e Modelli GLTF -->
+    <!-- Gemello Digitale 3D PBR con OrbitControls -->
     <div class="card">
-      <h2>🚘 Gemello Digitale 3D (CAD/GLTF Interactive Asset)</h2>
+      <h2>🚘 Gemello Digitale 3D (Interactive CAD Simulation)</h2>
       <div id="three-canvas-container">
-        <div class="canvas-overlay" id="asset-label">Caricamento Modello CAD...</div>
+        <div class="canvas-overlay" id="asset-label">Rendering Asset CAD...</div>
       </div>
     </div>
 
@@ -109,7 +109,7 @@
         <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
         <input type="text" id="username" value="Ing_NMA" style="width:120px; padding:3px;">
       </div>
-      <div id="chat-box" style="height: 200px; overflow-y: auto; background: #030712; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 8px;"></div>
+      <div id="chat-box" style="height: 180px; overflow-y: auto; background: #030712; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 8px; border: 1px solid #1e293b;"></div>
       <form onsubmit="sendMsg(event)" class="chat-input-group" style="display:flex; gap:6px;">
         <input type="text" id="msg" placeholder="Inserisci comando..." style="flex:1;">
         <button type="submit" class="btn-green">Invia</button>
@@ -141,87 +141,183 @@
     const chartDom = document.getElementById('echarts2d');
     const myChart = echarts.init(chartDom);
 
-    // 2. Inizializzazione Three.js con OrbitControls & Light Rig Industriale
+    // 2. Inizializzazione Three.js con Studio Light & OrbitControls
     const container = document.getElementById('three-canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Luci
-    const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambLight);
+    // Studio Lighting setup
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    
+    const keyLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
+    keyLight.position.set(5, 8, 5);
+    scene.add(keyLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.5);
-    dirLight1.position.set(10, 20, 15);
-    dirLight1.castShadow = true;
-    scene.add(dirLight1);
+    const fillLight = new THREE.DirectionalLight(0x4ade80, 0.8);
+    fillLight.position.set(-5, -2, -5);
+    scene.add(fillLight);
 
-    const dirLight2 = new THREE.DirectionalLight(0x4ade80, 0.8);
-    dirLight2.position.set(-10, -10, -10);
-    scene.add(dirLight2);
+    // Grid Floor Industriale
+    const gridHelper = new THREE.GridHelper(10, 20, 0x38bdf8, 0x1e293b);
+    gridHelper.position.y = -1;
+    scene.add(gridHelper);
 
-    let activeModel = null;
-    const gltfLoader = new THREE.GLTFLoader();
+    let activeGroup = new THREE.Group();
+    scene.add(activeGroup);
 
-    // URL Modelli GLTF Industriali da Repository CDN
-    const modelURLs = {
-      cnc: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/ArtCorrectedTextures/glTF-Binary/ArtCorrectedTextures.glb',
-      tubi: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/WaterBottle/glTF-Binary/WaterBottle.glb',
-      auto: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb',
-      agri: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Buggy/glTF-Binary/Buggy.glb'
-    };
+    // Costruttori 3D HD PBR
+    function buildAutomotiveAsset() {
+      const g = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.2 });
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.1, roughness: 0.1, transparent: true, opacity: 0.6 });
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.8 });
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 1.2), bodyMat);
+      body.position.y = 0.1;
+      g.add(body);
+
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.5, 1.0), glassMat);
+      cabin.position.set(-0.1, 0.5, 0);
+      g.add(cabin);
+
+      const wGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 24);
+      [[-0.8, -0.1, 0.6], [0.8, -0.1, 0.6], [-0.8, -0.1, -0.6], [0.8, -0.1, -0.6]].forEach(p => {
+        const w = new THREE.Mesh(wGeo, wheelMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(...p);
+        g.add(w);
+      });
+      return g;
+    }
+
+    function buildRoboticsAsset() {
+      const g = new THREE.Group();
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.3 });
+      const armMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.3 });
+      const jointMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
+
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 0.3, 32), baseMat);
+      base.position.y = -0.85;
+      g.add(base);
+
+      const j1 = new THREE.Mesh(new THREE.SphereGeometry(0.35, 24, 24), jointMat);
+      j1.position.set(0, -0.5, 0);
+      g.add(j1);
+
+      const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.2, 24), armMat);
+      arm1.position.set(0.2, 0.1, 0);
+      arm1.rotation.z = -0.4;
+      g.add(arm1);
+
+      const j2 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 24), jointMat);
+      j2.position.set(0.42, 0.6, 0);
+      g.add(j2);
+
+      const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.0, 24), armMat);
+      arm2.position.set(0.85, 0.6, 0);
+      arm2.rotation.z = Math.PI / 2;
+      g.add(arm2);
+
+      return g;
+    }
+
+    function buildAgriAsset() {
+      const g = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, metalness: 0.4, roughness: 0.4 });
+      const cabinMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5 });
+      const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 1.0), bodyMat);
+      body.position.set(0.1, 0.1, 0);
+      g.add(body);
+
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), cabinMat);
+      cabin.position.set(-0.3, 0.9, 0);
+      g.add(cabin);
+
+      const bigTire = new THREE.CylinderGeometry(0.5, 0.5, 0.25, 24);
+      const smallTire = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 24);
+
+      [[-0.4, 0.1, 0.6], [-0.4, 0.1, -0.6]].forEach(p => {
+        const w = new THREE.Mesh(bigTire, tireMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(...p);
+        g.add(w);
+      });
+      [[0.6, -0.1, 0.55], [0.6, -0.1, -0.55]].forEach(p => {
+        const w = new THREE.Mesh(smallTire, tireMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(...p);
+        g.add(w);
+      });
+
+      return g;
+    }
+
+    function buildPipelineAsset() {
+      const g = new THREE.Group();
+      const pipeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85, roughness: 0.25 });
+      const flangeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.2 });
+      const valveMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.3 });
+
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 3.2, 32), pipeMat);
+      pipe.rotation.z = Math.PI / 2;
+      g.add(pipe);
+
+      [-1.2, 0, 1.2].forEach(x => {
+        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.12, 32), flangeMat);
+        flange.rotation.z = Math.PI / 2;
+        flange.position.x = x;
+        g.add(flange);
+      });
+
+      const valveBody = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.6, 24), flangeMat);
+      valveBody.position.set(0, 0.5, 0);
+      g.add(valveBody);
+
+      const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.05, 16, 32), valveMat);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(0, 0.8, 0);
+      g.add(wheel);
+
+      return g;
+    }
 
     function load3DAsset(tabKey) {
-      if (activeModel) scene.remove(activeModel);
-      document.getElementById('asset-label').innerText = 'Caricamento Modello 3D GLTF...';
+      scene.remove(activeGroup);
+      
+      if (tabKey === 'auto') {
+        activeGroup = buildAutomotiveAsset();
+        document.getElementById('asset-label').innerText = '🚘 Gemello 3D: Veicolo OBD-III & Sensori Telemetrici';
+      } else if (tabKey === 'cnc') {
+        activeGroup = buildRoboticsAsset();
+        document.getElementById('asset-label').innerText = '🏭 Gemello 3D: Isola Robotizzata CNC Multiasse';
+      } else if (tabKey === 'agri') {
+        activeGroup = buildAgriAsset();
+        document.getElementById('asset-label').innerText = '🚜 Gemello 3D: Trattore e Sistema Guida RTK 4.0';
+      } else if (tabKey === 'tubi') {
+        activeGroup = buildPipelineAsset();
+        document.getElementById('asset-label').innerText = '🔧 Gemello 3D: Condotta Gas UNI 9737 e Valvola Pressione';
+      }
 
-      const url = modelURLs[tabKey];
-      gltfLoader.load(url, (gltf) => {
-        activeModel = gltf.scene;
-        
-        // Auto-Center e Bounding Box Scaling
-        const box = new THREE.Box3().setFromObject(activeModel);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        
-        activeModel.position.x += (activeModel.position.x - center.x);
-        activeModel.position.y += (activeModel.position.y - center.y);
-        activeModel.position.z += (activeModel.position.z - center.z);
-        
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 2.8 / maxDim;
-        activeModel.scale.set(scale, scale, scale);
-
-        scene.add(activeModel);
-        camera.position.set(3, 2, 4);
-        controls.target.set(0, 0, 0);
-        controls.update();
-
-        const labels = {
-          auto: '🚘 Asset 3D: Veicolo Industriale Telemetrico OBD-III',
-          agri: '🚜 Asset 3D: Veicolo Agricoltura 4.0 & RTK',
-          cnc: '🏭 Asset 3D: Isola Robotizzata e Centro CNC',
-          tubi: '🔧 Asset 3D: Valvola di Pressione & Condotta UNI 9737'
-        };
-        document.getElementById('asset-label').innerText = labels[tabKey];
-      }, undefined, (error) => {
-        console.error("Errore caricamento 3D:", error);
-        document.getElementById('asset-label').innerText = 'Asset 3D Offline - Visualizzazione Standby';
-      });
+      scene.add(activeGroup);
+      camera.position.set(3.2, 2.2, 4.0);
+      controls.target.set(0, 0, 0);
+      controls.update();
     }
 
     function animateThree() {
       requestAnimationFrame(animateThree);
       controls.update();
-      if (activeModel) activeModel.rotation.y += 0.003;
+      if (activeGroup) activeGroup.rotation.y += 0.005;
       renderer.render(scene, camera);
     }
     animateThree();
