@@ -6,23 +6,22 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  maxHttpBufferSize: 1e7 // 10MB limit per l'invio di PDF e foto in chat
+  maxHttpBufferSize: 1e7
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
-  console.log('Nuovo client connesso:', socket.id);
+  console.log('Client connesso:', socket.id);
 
   socket.on('register-user', (username) => {
-    socket.username = username;
+    socket.username = username || 'Operatore';
   });
 
   socket.on('chat-message', (data) => {
     io.emit('chat-message', data);
   });
 
-  // Gestione Segnalazione WebRTC per Audio/Video
   socket.on('call-user', (data) => {
     socket.broadcast.emit('call-made', {
       offer: data.offer,
@@ -46,7 +45,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('end-call', () => {
-    socket.broadcast.emit('call-ended');
+    io.emit('call-ended');
   });
 
   socket.on('disconnect', () => {

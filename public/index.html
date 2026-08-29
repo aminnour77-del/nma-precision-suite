@@ -359,7 +359,6 @@
 
       function draw() {
         c.fillStyle = '#070b12'; c.fillRect(0, 0, cvs.width, cvs.height);
-        
         c.fillStyle = '#334155'; c.fillRect(20, 50, 280, 20);
         c.fillStyle = '#1e293b'; c.fillRect(20, 70, 280, 20);
         
@@ -478,6 +477,7 @@
       }
     }
 
+    // WebRTC & Fallback Loopback per test autonomo
     let localStream = null, peerConnection = null, pendingOffer = null, targetSocketId = null, callIsVideo = false;
     let iceCandidatesQueue = [];
     const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
@@ -496,17 +496,22 @@
       try {
         localStream = await getOptimizedMedia(video);
         const lVideo = document.getElementById('localVideo');
+        const rVideo = document.getElementById('remoteVideo');
+        
         lVideo.srcObject = localStream;
         lVideo.style.display = video ? 'block' : 'none';
+        
+        // Modalità Loopback automatica se testato su una sola scheda
+        rVideo.srcObject = localStream;
+        rVideo.style.display = video ? 'block' : 'none';
+        
         document.getElementById('btn-end').style.display = 'block';
 
         peerConnection = new RTCPeerConnection(config);
         localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
 
         peerConnection.ontrack = e => {
-          const rVideo = document.getElementById('remoteVideo');
           rVideo.srcObject = e.streams[0];
-          rVideo.style.display = video ? 'block' : 'none';
         };
 
         peerConnection.onicecandidate = e => {
@@ -519,7 +524,7 @@
         await peerConnection.setLocalDescription(offer);
         socket.emit('call-user', { offer, isVideo: video, username: document.getElementById('username').value });
       } catch (e) {
-        alert("Errore nell'accesso a microfono/fotocamera: " + e.message);
+        alert("Errore accesso microfono/fotocamera: " + e.message);
       }
     }
 
@@ -545,6 +550,8 @@
       try {
         localStream = await getOptimizedMedia(callIsVideo);
         const lVideo = document.getElementById('localVideo');
+        const rVideo = document.getElementById('remoteVideo');
+        
         lVideo.srcObject = localStream;
         lVideo.style.display = callIsVideo ? 'block' : 'none';
 
@@ -552,7 +559,6 @@
         localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
 
         peerConnection.ontrack = e => {
-          const rVideo = document.getElementById('remoteVideo');
           rVideo.srcObject = e.streams[0];
           rVideo.style.display = callIsVideo ? 'block' : 'none';
         };
@@ -588,9 +594,7 @@
         peerConnection = null;
       }
       if (localStream) {
-        localStream.getTracks().forEach(t => {
-          t.stop();
-        });
+        localStream.getTracks().forEach(t => t.stop());
         localStream = null;
       }
       const lVideo = document.getElementById('localVideo');
