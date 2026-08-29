@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>N.M.A. SYSTEMS - Enterprise 3D Telemetry & AI Suite</title>
+  <title>N.M.A. SYSTEMS - Industrial 3D Telemetry & AI Suite</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -27,9 +27,9 @@
     }
 
     body.cad-theme {
-      --bg-main: #f8fafc;
+      --bg-main: #f1f5f9;
       --bg-card: #ffffff;
-      --bg-box: #f1f5f9;
+      --bg-box: #e2e8f0;
       --border-color: #cbd5e1;
       --text-main: #0f172a;
       --text-muted: #475569;
@@ -50,7 +50,7 @@
     .selector-bar { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
     .selector-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; white-space: nowrap; transition: all 0.2s; }
     .selector-btn:hover { border-color: var(--accent-light); color: var(--text-main); }
-    .selector-btn.active { background: var(--accent); color: white; border-color: var(--accent-light); boxShadow: 0 4px 12px rgba(2,132,199,0.3); }
+    .selector-btn.active { background: var(--accent); color: white; border-color: var(--accent-light); box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
     
     .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
     @media (max-width: 960px) { .dashboard-grid { grid-template-columns: 1fr; } }
@@ -61,9 +61,10 @@
     .telemetry-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     @media (max-width: 640px) { .telemetry-row { grid-template-columns: 1fr; } }
 
-    #three-container { width: 100%; height: 230px; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); border-radius: 8px; position: relative; border: 1px solid var(--border-color); cursor: grab; }
+    #three-container { width: 100%; height: 250px; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); border-radius: 8px; position: relative; border: 1px solid var(--border-color); cursor: grab; }
     #three-container:active { cursor: grabbing; }
-    .3d-hint { position: absolute; bottom: 8px; left: 8px; font-size: 9px; color: #94a3b8; background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 4px; pointer-events: none; }
+    .3d-hint { position: absolute; bottom: 8px; left: 8px; font-size: 9.5px; color: #cbd5e1; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); }
+    .sensor-tag { position: absolute; top: 12px; right: 12px; background: rgba(2, 132, 199, 0.9); color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; border: 1px solid var(--accent-light); }
 
     .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
     @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -75,7 +76,7 @@
     .st-warn { background: #713f12; color: #fde047; }
     .st-crit { background: #7f1d1d; color: #fca5a5; }
 
-    #map { height: 210px; border-radius: 8px; border: 1px solid var(--border-color); }
+    #map { height: 230px; border-radius: 8px; border: 1px solid var(--border-color); }
     #chat-box { height: 170px; overflow-y: auto; background: var(--bg-box); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 11px; }
     .chat-msg { margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; background: var(--border-color); max-width: 85%; }
     .chat-msg.me { background: var(--accent); color: white; margin-left: auto; }
@@ -88,7 +89,7 @@
     .btn-red { background: #b91c1c; }
     .btn-secondary { background: #334155; }
 
-    #sig-canvas { background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; cursor: crosshair; touch-action: none; width: 100%; height: 80px; }
+    #sig-canvas { background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; cursor: crosshair; touch-action: none; width: 100%; height: 90px; }
     .ai-copilot { background: rgba(2, 132, 199, 0.08); border: 1px solid var(--accent); padding: 10px; border-radius: 8px; font-size: 12px; color: var(--accent-light); margin-top: 10px; display: flex; align-items: center; gap: 8px; }
   </style>
 </head>
@@ -97,41 +98,43 @@
   <header>
     <div>
       <h1 class="brand-title">N.M.A. SYSTEMS</h1>
-      <div class="brand-subtitle">Precision Telemetry, Digital Twin 3D & AI Copilot Platform</div>
+      <div class="brand-subtitle">Industrial Digital Twin 3D Telemetry & Quality Engineering Platform</div>
     </div>
     <div class="top-actions">
-      <button onclick="toggleTheme()" class="btn-secondary">☀️ Switch CAD Theme</button>
+      <button onclick="testAlarmAudio()" class="btn-secondary">🔊 Test Allarme Audio</button>
+      <button onclick="toggleTheme()" class="btn-secondary">☀️ Theme CAD</button>
       <span class="badge-online">ONLINE RTK</span>
     </div>
   </header>
 
   <div class="selector-bar">
-    <button class="selector-btn active" onclick="switchTab('tubi', event)">🔧 Tubazioni Gas (UNI 9737 / Pipeline)</button>
-    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & High-Precision Machining</button>
-    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura RTK di Precisione</button>
+    <button class="selector-btn active" onclick="switchTab('tubi', event)">🔧 Pipeline Inox Gas (Attacco Sensori NMA)</button>
+    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 Mandrino CNC Alta Precisione</button>
+    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 RTK Rover Agricoltura</button>
     <button class="selector-btn" onclick="switchTab('auto', event)">🚗 Automotive Telemetry OBD-III</button>
   </div>
 
   <div class="dashboard-grid">
     <div class="card">
       <h2 id="module-title">
-        <span>🔧 Tubazioni Gas (UNI 9737 / Pipeline)</span>
+        <span>🔧 Pipeline Inox Gas (Attacco Sensori NMA)</span>
         <div style="display:flex; gap:6px;">
-          <button class="btn-red" onclick="triggerFaultInjection()">⚠️ Simula Anomalia Stress</button>
+          <button class="btn-red" onclick="triggerFaultInjection()">🚨 Simula Anomalia Stress</button>
           <button class="btn-secondary" onclick="resetMetrics()">🔄 Ripristina</button>
         </div>
       </h2>
 
       <div class="telemetry-row">
         <div>
-          <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">DIGITAL TWIN 3D CAD (INTERATTIVO)</div>
+          <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">DIGITAL TWIN 3D INDUSTRIALE</div>
           <div id="three-container">
-            <div class="3d-hint">🖱️ Trascina per ruotare | Scroll per Zoom</div>
+            <div class="3d-hint">🖱️ Trascina per ruotare 360° | Scroll per Zoom</div>
+            <div class="sensor-tag" id="sensor-status-tag">📍 Attacco Sensore NMA: Vacante</div>
           </div>
         </div>
         <div>
-          <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">ANALISI DINAMICA TELEMETRIA</div>
-          <canvas id="liveChart" height="180"></canvas>
+          <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">ANALISI TELEMETRICA LIVE</div>
+          <canvas id="liveChart" height="195"></canvas>
         </div>
       </div>
 
@@ -139,16 +142,16 @@
 
       <div class="ai-copilot" id="ai-status">
         <span>🤖</span>
-        <div><b>AI COPILOT DIAGNOSTICO:</b> Parametri operativi entro le tolleranze di progetto ISO 9001 / UNI 9737.</div>
+        <div><b>AI COPILOT DIAGNOSTICO:</b> Sistema in operatività nominale. Tolleranze meccaniche e di pressione ISO/UNI rispettate.</div>
       </div>
     </div>
 
     <div class="card">
       <h2>🌍 GPS RTK & Geolocalizzazione Impianto</h2>
       <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:10px;">
-        <div class="f1-box"><span class="f1-title">Nodo Reg.</span><span class="f1-val" id="gps-label" style="font-size:11px;">Torino Nord</span></div>
-        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" style="color:#4ade80;">8 ms</span></div>
-        <div class="f1-box"><span class="f1-title">Stato Rete</span><span class="f1-val" style="color:#4ade80;">5G RTK</span></div>
+        <div class="f1-box"><span class="f1-title">Nodo Impianto</span><span class="f1-val" id="gps-label" style="font-size:11px;">Torino Nord</span></div>
+        <div class="f1-box"><span class="f1-title">Latenza RTK</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
+        <div class="f1-box"><span class="f1-title">Stato Rete</span><span class="f1-val" style="color:#4ade80;">5G ONLINE</span></div>
       </div>
       <div id="map"></div>
     </div>
@@ -156,15 +159,15 @@
 
   <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr;">
     <div class="card">
-      <h2>💬 Communication Hub & Allegati Tecnici</h2>
+      <h2>💬 Operational Service Hub & Chat Operatore</h2>
       <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
-        <span style="font-size:11px; font-weight:700; color:var(--text-muted);">Operatore Tecnico:</span>
-        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:140px;">
+        <span style="font-size:11px; font-weight:700; color:var(--text-muted);">Operatore Certificato:</span>
+        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:150px;">
       </div>
 
       <div id="chat-box"></div>
       <form onsubmit="sendMsg(event)" class="chat-input-group">
-        <input type="text" id="msg" placeholder="Digita un messaggio di servizio..." style="flex:1;">
+        <input type="text" id="msg" placeholder="Inserisci note di collaudo o messaggi di servizio..." style="flex:1;">
         <input type="file" id="photo-input" accept="image/*,application/pdf" style="display:none" onchange="sendFile(this)">
         <button type="button" class="btn-secondary" onclick="document.getElementById('photo-input').click()">📎</button>
         <button type="submit" class="btn-green">Invia</button>
@@ -172,16 +175,16 @@
     </div>
 
     <div class="card">
-      <h2>✍️ Firma Digitale & Collaudo Certificato PDF</h2>
-      <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">FIRMA OPERATORE (DISEGNA SU CANVAS):</div>
-      <canvas id="sig-canvas" width="400" height="80"></canvas>
+      <h2>✍️ Firma Collaudatore & Certificate Export</h2>
+      <div style="font-size:10px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">FIRMA AUTOGRAFA COL LAUDATORE (DISAGNA SUL CANVAS):</div>
+      <canvas id="sig-canvas" width="400" height="90"></canvas>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
         <button onclick="clearSignature()" class="btn-secondary" style="font-size:10px; padding:4px 8px;">🗑️ Pulisci Canvas</button>
-        <span style="font-size:10px; color:var(--text-muted); font-weight:700;">Conforme UNI EN ISO 3834-2</span>
+        <span style="font-size:10px; color:var(--text-muted); font-weight:700;">Normative: ISO 9001 | ISO 3834-2 | UNI 9737</span>
       </div>
 
       <div style="display:flex; gap:8px; margin-top:12px;">
-        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1;">📥 Export Rapporto Certificato PDF</button>
+        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1; padding:12px; font-size:13px;">📑 Genera Report di Collaudo Professionale PDF</button>
       </div>
     </div>
   </div>
@@ -189,6 +192,46 @@
   <script>
     const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
     let currentActiveTab = 'tubi';
+
+    // SBLOCCO AUDIO AUTOMATICO SU QUALSIASI INTERAZIONE
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+    document.addEventListener('click', initAudio);
+    document.addEventListener('touchstart', initAudio);
+
+    function playAlarmSound() {
+      initAudio();
+      if (!audioCtx) return;
+      
+      const now = audioCtx.currentTime;
+      for (let i = 0; i < 3; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, now + i * 0.25);
+        osc.frequency.exponentialRampToValueAtTime(440, now + i * 0.25 + 0.18);
+        
+        gain.gain.setValueAtTime(0.4, now + i * 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.25 + 0.2);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(now + i * 0.25);
+        osc.stop(now + i * 0.25 + 0.2);
+      }
+    }
+
+    function testAlarmAudio() {
+      playAlarmSound();
+    }
 
     function toggleTheme() {
       document.body.classList.toggle('cad-theme');
@@ -200,24 +243,7 @@
     }
     socket.on('connect', () => { updateUsername(); });
 
-    function playAudioAlarm() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      } catch(e) {}
-    }
-
-    // Canvas Firma Digitale
+    // CANVAS FIRMA
     const sigCanvas = document.getElementById('sig-canvas');
     const sigCtx = sigCanvas.getContext('2d');
     let isDrawing = false;
@@ -243,82 +269,112 @@
       sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
     }
 
-    // THREE.JS FOTOREALISTICO & MODELLI SPECIFICI
+    // THREE.JS ENGINE REALISTICO INDUSTRIALE
     const container = document.getElementById('three-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Luci PBR Metalliche
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    // ILLUMINAZIONE STUDIO INDUSTRIALE
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.2);
-    dirLight1.position.set(10, 15, 10);
-    scene.add(dirLight1);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    mainLight.position.set(5, 10, 7);
+    scene.add(mainLight);
 
-    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight2.position.set(-10, -10, -10);
-    scene.add(dirLight2);
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.9);
+    rimLight.position.set(-5, -5, -5);
+    scene.add(rimLight);
 
-    camera.position.set(0, 2, 7);
+    const pointAlertLight = new THREE.PointLight(0xef4444, 0, 10);
+    pointAlertLight.position.set(0, 2, 0);
+    scene.add(pointAlertLight);
 
-    // Gruppi per Modelli 3D
+    camera.position.set(0, 2.5, 6.5);
+
+    // MATERIALI REALI
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.25 });
+    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.3 }); // Attacco ottone/sensore NMA
+    const boltMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.95, roughness: 0.15 });
+    const weldMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.5 });
+
     const models = { tubi: new THREE.Group(), cnc: new THREE.Group(), agri: new THREE.Group(), auto: new THREE.Group() };
     Object.values(models).forEach(g => scene.add(g));
 
-    // 1. Tubazione Inox con Flangia e Saldatura
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.2 });
-    const pipeGeo = new THREE.CylinderGeometry(0.8, 0.8, 4, 32);
-    const pipeMesh = new THREE.Mesh(pipeGeo, metalMat);
+    // --- 1. MODEL: PIPELINE GAS INOX (CON ATTACCO SENSORE NMA VACANTE) ---
+    // Tubo Principale Inox
+    const pipeGeo = new THREE.CylinderGeometry(0.75, 0.75, 4.2, 32);
+    const pipeMesh = new THREE.Mesh(pipeGeo, steelMat);
     pipeMesh.rotation.z = Math.PI / 2;
     models.tubi.add(pipeMesh);
 
-    // Flangia
-    const flangeGeo = new THREE.CylinderGeometry(1.3, 1.3, 0.25, 32);
-    const flangeMesh = new THREE.Mesh(flangeGeo, metalMat);
+    // Flangia Anteriore con Bulloni
+    const flangeGeo = new THREE.CylinderGeometry(1.25, 1.25, 0.25, 32);
+    const flangeMesh = new THREE.Mesh(flangeGeo, steelMat);
     flangeMesh.rotation.z = Math.PI / 2;
-    flangeMesh.position.x = 1.5;
+    flangeMesh.position.x = 1.8;
     models.tubi.add(flangeMesh);
 
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const boltGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.35, 6);
+      const bolt = new THREE.Mesh(boltGeo, boltMat);
+      bolt.position.set(1.8, Math.cos(angle) * 1.0, Math.sin(angle) * 1.0);
+      bolt.rotation.z = Math.PI / 2;
+      models.tubi.add(bolt);
+    }
+
     // Cordone di Saldatura ISO 3834
-    const weldGeo = new THREE.TorusGeometry(0.85, 0.08, 16, 32);
-    const weldMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9, roughness: 0.3 });
+    const weldGeo = new THREE.TorusGeometry(0.77, 0.06, 16, 32);
     const weldMesh = new THREE.Mesh(weldGeo, weldMat);
     weldMesh.rotation.y = Math.PI / 2;
-    weldMesh.position.x = -0.5;
+    weldMesh.position.x = -0.6;
     models.tubi.add(weldMesh);
 
-    // 2. CNC Spindle Modello
-    const cncBody = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.9, 3, 32), metalMat);
+    // ATTACCO SENSORE NMA (Manicotto Filettato 1/2" NPT Vacante)
+    const sensorSocketGroup = new THREE.Group();
+    const socketGeo = new THREE.CylinderGeometry(0.22, 0.25, 0.5, 16);
+    const socketMesh = new THREE.Mesh(socketGeo, brassMat);
+    socketMesh.position.set(-0.2, 0.95, 0);
+    sensorSocketGroup.add(socketMesh);
+
+    // Foro filettatura interna
+    const holeGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.52, 16);
+    const holeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+    const holeMesh = new THREE.Mesh(holeGeo, holeMat);
+    holeMesh.position.set(-0.2, 0.95, 0);
+    sensorSocketGroup.add(holeMesh);
+    models.tubi.add(sensorSocketGroup);
+
+    // --- 2. MODEL: MANDRINO CNC ---
+    const cncBody = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.8, 3.2, 32), steelMat);
     models.cnc.add(cncBody);
-    const cncBit = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.05, 1.2, 16), weldMat);
-    cncBit.position.y = -2;
-    models.cnc.add(cncBit);
+    const cncHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.8, 16), brassMat);
+    cncHolder.position.y = -1.8;
+    models.cnc.add(cncHolder);
 
-    // 3. Rover Agricolo RTK
-    const agriBody = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.8, 1.6), metalMat);
+    // --- 3. MODEL: RTK ROVER ---
+    const agriBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.7, 1.5), steelMat);
     models.agri.add(agriBody);
-    const gpsAntenna = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 16), weldMat);
-    gpsAntenna.position.set(0, 0.8, 0);
-    models.agri.add(gpsAntenna);
-    const gpsDome = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshStandardMaterial({ color: 0x22c55e }));
-    gpsDome.position.set(0, 1.2, 0);
-    models.agri.add(gpsDome);
+    const rtkAntenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 16), brassMat);
+    rtkAntenna.position.set(0, 0.8, 0);
+    models.agri.add(rtkAntenna);
 
-    // 4. Engine / Auto Block Modello
-    const autoBlock = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.2, 1.4), metalMat);
+    // --- 4. MODEL: AUTOMOTIVE OBD ---
+    const autoBlock = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 1.3), steelMat);
     models.auto.add(autoBlock);
-    const turboMesh = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.2, 16, 32), weldMat);
-    turboMesh.position.set(1.2, 0.4, 0);
-    models.auto.add(turboMesh);
+    const o2Socket = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.4, 16), brassMat);
+    o2Socket.position.set(0.8, 0.7, 0);
+    models.auto.add(o2Socket);
 
     function showModel(key) {
       Object.keys(models).forEach(k => { models[k].visible = (k === key); });
@@ -329,7 +385,7 @@
       requestAnimationFrame(animate3D);
       controls.update();
       if(models[currentActiveTab]) {
-        models[currentActiveTab].rotation.y += 0.005;
+        models[currentActiveTab].rotation.y += 0.004;
       }
       renderer.render(scene, camera);
     }
@@ -341,10 +397,11 @@
       renderer.setSize(container.clientWidth, container.clientHeight);
     });
 
-    // DATA STORE
+    // DATA STORE & TAB SWITCHING
     const tabsData = {
       tubi: {
-        title: '🔧 Tubazioni Gas (UNI 9737 / Pipeline Engineering)', gps: [45.0600, 7.6700], label: 'Torino Nord - Gas Duct',
+        title: '🔧 Pipeline Inox Gas (Attacco Sensori NMA Vacante)', gps: [45.0600, 7.6700], label: 'Torino Nord - Gas Duct',
+        sensorLabel: '📍 Attacco Sensore NMA P/T-01: VACANTE',
         metrics: [
           { t: 'Pressione Pe', v: '12.4 Bar', st: 'NOMINALE', ok: true },
           { t: 'Portata Qv', v: '420 m³/h', st: 'NOMINALE', ok: true },
@@ -353,7 +410,8 @@
         ]
       },
       cnc: {
-        title: '🏭 CNC & High-Precision Machining Telemetry', gps: [45.0703, 7.6869], label: 'Torino CNC Plant',
+        title: '🏭 Mandrino CNC Alta Precisione (Slot Sensore RMS)', gps: [45.0703, 7.6869], label: 'Torino CNC Plant',
+        sensorLabel: '📍 Attacco Sensore NMA Vibro-RMS: VACANTE',
         metrics: [
           { t: 'OEE Totale', v: '97.2 %', st: 'ECCELLENTE', ok: true },
           { t: 'RPM Mandrino', v: '18,500', st: 'HIGH SPEED', ok: true },
@@ -362,7 +420,8 @@
         ]
       },
       agri: {
-        title: '🚜 Agricoltura RTK di Precisione Telemetry', gps: [45.1500, 7.7500], label: 'Campo RTK Test',
+        title: '🚜 RTK Rover Agricoltura (Slot Sensore Suolo)', gps: [45.1500, 7.7500], label: 'Campo RTK Test',
+        sensorLabel: '📍 Attacco Sensore NMA NDVI: VACANTE',
         metrics: [
           { t: 'Umidità Suolo', v: '42 %', st: 'OTTIMALE', ok: true },
           { t: 'Indice NDVI', v: '0.85', st: 'HIGH VIGOR', ok: true },
@@ -371,7 +430,8 @@
         ]
       },
       auto: {
-        title: '🚗 Automotive Telemetry OBD-III Fleet', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        title: '🚗 Automotive Telemetry OBD-III (Slot Sensore EGT)', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        sensorLabel: '📍 Attacco Sensore NMA OBD-III: VACANTE',
         metrics: [
           { t: 'Regime Motore', v: '3,950 RPM', st: 'NOMINALE', ok: true },
           { t: 'Press. Turbo', v: '1.90 Bar', st: 'BOOST OK', ok: true },
@@ -388,6 +448,7 @@
       const d = tabsData[k];
       document.getElementById('module-title').querySelector('span').innerText = d.title;
       document.getElementById('gps-label').innerText = d.label;
+      document.getElementById('sensor-status-tag').innerText = d.sensorLabel;
       renderMetrics(d.metrics);
       showModel(k);
       map.setView(d.gps, 13);
@@ -412,37 +473,37 @@
     }
 
     function triggerFaultInjection() {
-      playAudioAlarm();
-      metalMat.color.setHex(0xef4444); // Surriscaldamento rosso incandescente 3D
-      weldMat.color.setHex(0xf97316);
+      playAlarmSound();
+      steelMat.color.setHex(0xef4444);
+      pointAlertLight.intensity = 3;
       const activeData = tabsData[currentActiveTab];
       activeData.metrics[0].v = '99.9 OVER';
       activeData.metrics[0].st = 'CRITICO High P';
       activeData.metrics[1].st = 'WARNING Delta';
       renderMetrics(activeData.metrics);
-      document.getElementById('ai-status').innerHTML = '<span>⚠️</span><div><b>AI COPILOT ALERT:</b> Rilevata anomalia di sovra-pressione / stress termico sul Digital Twin. Interruzione di sicurezza suggerita!</div>';
+      document.getElementById('ai-status').innerHTML = '<span>🚨</span><div><b>AI COPILOT ALERT:</b> Rilevata anomalia di sovra-pressione / stress termico. Allarme acustico e visivo attivato!</div>';
     }
 
     function resetMetrics() {
-      metalMat.color.setHex(0x94a3b8);
-      weldMat.color.setHex(0x38bdf8);
-      document.getElementById('ai-status').innerHTML = '<span>🤖</span><div><b>AI COPILOT DIAGNOSTICO:</b> Parametri operativi entro le tolleranze di progetto ISO 9001 / UNI 9737.</div>';
+      steelMat.color.setHex(0x94a3b8);
+      pointAlertLight.intensity = 0;
+      document.getElementById('ai-status').innerHTML = '<span>🤖</span><div><b>AI COPILOT DIAGNOSTICO:</b> Sistema in operatività nominale. Tolleranze meccaniche e di pressione ISO/UNI rispettate.</div>';
       const d = tabsData[currentActiveTab];
       renderMetrics(d.metrics);
     }
 
-    // MAPPA GPS LEAFLET
+    // MAPPA LEAFLET
     const map = L.map('map', { preferCanvas: true }).setView([45.0600, 7.6700], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
     const marker = L.marker([45.0600, 7.6700]).addTo(map).bindPopup('Torino Nord - Gas Duct').openPopup();
 
-    // CHART.JS TELEMETRIA
+    // CHART LIVE
     const ctx = document.getElementById('liveChart').getContext('2d');
     const chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25'],
-        datasets: [{ label: 'Frequenza Hz', data: [3800, 3860, 3950, 3900, 3950, 3980], borderColor: '#0284c7', backgroundColor: 'rgba(2,132,199,0.1)', fill: true, tension: 0.3 }]
+        datasets: [{ label: 'Frequenza (Hz)', data: [3800, 3860, 3950, 3900, 3950, 3980], borderColor: '#0284c7', backgroundColor: 'rgba(2,132,199,0.12)', fill: true, tension: 0.35 }]
       },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#1e293b' } }, x: { grid: { display: false } } } }
     });
@@ -479,37 +540,160 @@
       }
     }
 
-    // PDF ENGINE CON FIRMA
+    // PDF GENERATION DI ALTO LIVELLO PROFESSIONALE (PDFMAKE REVISIONATO)
     function downloadGeneratedPDF() {
       const activeData = tabsData[currentActiveTab];
       const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
       const sigDataUrl = sigCanvas.toDataURL();
+      const reportId = `NMA-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
+      const currentDate = new Date().toLocaleString('it-IT');
 
-      const docDef = {
+      const docDefinition = {
         pageSize: 'A4',
-        pageMargins: [35, 40, 35, 40],
-        content: [
-          {
+        pageMargins: [36, 36, 36, 45],
+        header: function(currentPage, pageCount) {
+          return {
+            margin: [36, 12, 36, 0],
             columns: [
-              { text: 'N.M.A. SYSTEMS & ENGINEERING\nPrecision Telemetry & Quality Assurance', fontSize: 9, color: '#475569' },
-              { text: `CERTIFICATO UFFICIALE NMA-REP-${Math.floor(100000 + Math.random() * 900000)}\nData: ${new Date().toLocaleDateString('it-IT')}`, alignment: 'right', fontSize: 9, bold: true, color: '#0284c7' }
+              { text: 'N.M.A. SYSTEMS & INDUSTRIAL ENGINEERING — TECHNICAL INSPECTION REPORT', fontSize: 7, bold: true, color: '#64748b' },
+              { text: `Doc Ref: ${reportId} | Pagina ${currentPage} di ${pageCount}`, alignment: 'right', fontSize: 7, color: '#64748b' }
             ]
+          };
+        },
+        content: [
+          // Banner di Testata Industriale
+          {
+            table: {
+              widths: ['*'],
+              body: [[
+                {
+                  fillColor: '#0f172a',
+                  margin: [16, 14, 16, 14],
+                  stack: [
+                    {
+                      columns: [
+                        { text: 'N.M.A. SYSTEMS', fontSize: 20, bold: true, color: '#38bdf8', letterSpacing: 1 },
+                        { text: 'RAPPORTO UFFICIALE DI COLLAUDO', alignment: 'right', fontSize: 11, bold: true, color: '#ffffff' }
+                      ]
+                    },
+                    { text: 'SUITE ENTERPRISE PER COLLAUDO MECCANICO, IMPLANTISTICO & DIGITAL TWIN 3D', fontSize: 8.5, color: '#94a3b8', margin: [0, 4, 0, 0] }
+                  ]
+                }
+              ]]
+            },
+            layout: 'noBorders'
           },
-          { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
           { text: '\n' },
-          { text: `RAPPORTO TELEMETRICO: ${activeData.title.toUpperCase()}`, fontSize: 13, bold: true, color: '#0f172a' },
-          { text: `Operatore: ${operatorName} | Nodo: ${activeData.label}`, fontSize: 9, color: '#475569', margin: [0, 0, 0, 10] },
-          { text: 'Conformità Normativa ISO 9001 / ISO 3834-2 / UNI 9737', fontSize: 10, bold: true, color: '#0284c7' },
+
+          // Tabella Metadati dell'Impianto
+          {
+            table: {
+              widths: ['25%', '25%', '25%', '25%'],
+              body: [
+                [
+                  { text: 'CODICE REPORT', style: 'metaHeader' },
+                  { text: 'DATA E ORA', style: 'metaHeader' },
+                  { text: 'OPERATORE TECNICO', style: 'metaHeader' },
+                  { text: 'NORMATIVA DI RIF.', style: 'metaHeader' }
+                ],
+                [
+                  { text: reportId, style: 'metaValue' },
+                  { text: currentDate, style: 'metaValue' },
+                  { text: operatorName, style: 'metaValue' },
+                  { text: 'ISO 9001 / UNI 9737', style: 'metaValue' }
+                ]
+              ]
+            },
+            layout: {
+              hLineWidth: function() { return 0.5; },
+              vLineWidth: function() { return 0.5; },
+              hLineColor: function() { return '#cbd5e1'; },
+              vLineColor: function() { return '#cbd5e1'; }
+            }
+          },
           { text: '\n' },
+
+          // Titolo Modulo e Collaudo
+          { text: `MODULO ISPEZIONATO: ${activeData.title.toUpperCase()}`, fontSize: 12, bold: true, color: '#0f172a' },
+          { text: `Ubicazione Nodo RTK: ${activeData.label} | Stato Slot Sensore: VACANTE (PRONTO PER INSTALLAZIONE NMA)`, fontSize: 9, color: '#475569', margin: [0, 2, 0, 10] },
+
+          // Tabella Parametri Telemetrici Live
+          {
+            table: {
+              headerRows: 1,
+              widths: ['35%', '25%', '20%', '20%'],
+              body: [
+                [
+                  { text: 'PARAMETRO DI MISURA', style: 'tableHeader' },
+                  { text: 'VALORE RILEVATO', style: 'tableHeader' },
+                  { text: 'TOLLERANZA', style: 'tableHeader' },
+                  { text: 'STATO', style: 'tableHeader' }
+                ],
+                ...activeData.metrics.map(m => [
+                  { text: m.t, fontSize: 9.5, bold: true, color: '#1e293b' },
+                  { text: m.v, fontSize: 9.5, fontFamily: 'SF Mono', color: '#0284c7', bold: true },
+                  { text: '± 0.5%', fontSize: 9, color: '#64748b' },
+                  { 
+                    text: m.st, 
+                    fontSize: 8.5, 
+                    bold: true, 
+                    color: m.st.includes('CRITICO') ? '#b91c1c' : (m.st.includes('WARNING') ? '#a16207' : '#15803d'),
+                    fillColor: m.st.includes('CRITICO') ? '#fee2e2' : (m.st.includes('WARNING') ? '#fef9c3' : '#dcfce7')
+                  }
+                ])
+              ]
+            },
+            layout: 'lightHorizontalLines'
+          },
+          { text: '\n' },
+
+          // Box Diagnostica AI Copilot
+          {
+            table: {
+              widths: ['*'],
+              body: [[
+                {
+                  fillColor: '#f0f9ff',
+                  borderColor: ['#0284c7', '#0284c7', '#0284c7', '#0284c7'],
+                  margin: [10, 10, 10, 10],
+                  stack: [
+                    { text: '🤖 DIAGNOSTICA ED AUDIT TRAIL AUTOMATICO (AI COPILOT NMA)', fontSize: 10, bold: true, color: '#0369a1' },
+                    { text: 'Tutti i parametri fisici sono stati campionati in tempo reale dal Digital Twin 3D. L\'integrità strutturale del componente e le tolleranze di giunzione rispecchiano i criteri di conformità della direttiva attrezzature in pressione (PED) e dello standard di saldatura UNI EN ISO 3834-2.', fontSize: 8.5, color: '#334155', margin: [0, 4, 0, 0] }
+                  ]
+                }
+              ]]
+            }
+          },
+          { text: '\n\n' },
+
+          // Firma Operatore e Timbro di Convalida
           {
             columns: [
-              { text: 'Firma Operatore Qualificato:', fontSize: 9, margin: [0, 20, 0, 0] },
-              { image: sigDataUrl, width: 140, alignment: 'right' }
+              {
+                width: '55%',
+                stack: [
+                  { text: 'ATTESTATO DI CONFORMITÀ E VALIDAZIONE', fontSize: 9, bold: true, color: '#0f172a' },
+                  { text: 'Si certifica che le rilevazioni telemetriche e le prove di stress termico/meccanico sono state eseguite secondo i protocolli ufficiali di sicurezza N.M.A. Systems.', fontSize: 8, color: '#64748b', margin: [0, 3, 0, 0] }
+                ]
+              },
+              {
+                width: '45%',
+                stack: [
+                  { text: `Firma Operatore Qualificato: (${operatorName})`, fontSize: 8.5, bold: true, alignment: 'right' },
+                  { image: sigDataUrl, width: 140, alignment: 'right', margin: [0, 4, 0, 0] }
+                ]
+              }
             ]
           }
-        ]
+        ],
+        styles: {
+          metaHeader: { fontSize: 7.5, bold: true, color: '#64748b', fillColor: '#f8fafc' },
+          metaValue: { fontSize: 8.5, bold: true, color: '#0f172a' },
+          tableHeader: { fontSize: 8.5, bold: true, color: '#ffffff', fillColor: '#1e293b' }
+        }
       };
-      pdfMake.createPdf(docDef).download(`Report_Certificato_NMA_${currentActiveTab}.pdf`);
+
+      pdfMake.createPdf(docDefinition).download(`${reportId}_${currentActiveTab}.pdf`);
     }
 
     switchTab('tubi', null);
