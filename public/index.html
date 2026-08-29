@@ -11,46 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 10px; background: #0b0f19; color: #f8fafc; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px; }
-    h1 { margin: 0; color: #38bdf8; font-size: 20px; font-weight: 800; }
-    .badge { background: #16a34a; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-    
-    .selector-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-    .selector-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; transition: 0.2s; }
-    .selector-btn.active { background: #0284c7; color: white; border-color: #38bdf8; }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px; }
-    .card { background: #131c2e; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; position: relative; }
-    .card h2 { font-size: 14px; margin-top: 0; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-    
-    .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
-    @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
-    .f1-box { background: #0a1120; padding: 6px; border-radius: 4px; border: 1px solid #1e293b; text-align: center; position: relative; }
-    .f1-title { font-size: 9px; color: #64748b; text-transform: uppercase; display: block; font-weight: 700; }
-    .f1-val { font-weight: 800; color: #38bdf8; font-size: 12px; font-family: monospace; }
-    .f1-status { font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 2px; margin-top: 3px; display: inline-block; }
-    .st-ok { background: #065f46; color: #34d399; }
-    .st-warn { background: #854d0e; color: #fde047; }
-
-    #map { height: 180px; border-radius: 6px; }
-    #chat-box { height: 210px; overflow-y: auto; background: #0a1120; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
-    .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: #1e293b; max-width: 85%; word-break: break-word; }
-    .chat-msg.me { background: #0369a1; margin-left: auto; }
-    
-    .chat-input-group { display: flex; gap: 4px; }
-    input[type="text"], select { padding: 6px 10px; background: #0a1120; border: 1px solid #1e293b; color: #fff; border-radius: 4px; font-size: 12px; }
-    button { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn-green { background: #16a34a; }
-
-    .iso-badge { display: inline-block; background: #1e293b; color: #38bdf8; font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-right: 3px; margin-bottom:3px; font-weight: bold; }
-    .pdf-actions { display: flex; gap: 6px; margin-top: 6px; }
-
-    #chart-modal { display: none; position: absolute; top: 40px; left: 12px; right: 12px; background: #0f172a; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
-  </style>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
@@ -147,26 +108,27 @@
     </div>
   </div>
 
-  <script>
-    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
+  <script type="module">
+    import { getPDFDocDefinition } from '/js/modules/pdfGenerator.js';
 
+    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
     let currentActiveTab = 'auto';
     let gpsInterval = null;
     let animId = null;
 
-    function updateUsername() {
+    window.updateUsername = function() {
       const u = document.getElementById('username').value || 'Operatore';
       socket.emit('register-user', u);
-    }
-    socket.on('connect', () => { updateUsername(); });
+    };
+    socket.on('connect', () => { window.updateUsername(); });
 
-    function requestNotifPermission() {
+    window.requestNotifPermission = function() {
       if ("Notification" in window) {
         Notification.requestPermission().then(p => {
           if (p === "granted") alert("Notifiche Push Attivate!");
         });
       }
-    }
+    };
 
     function triggerNotif(title, body) {
       if ("Notification" in window && Notification.permission === "granted") {
@@ -245,7 +207,7 @@
       }
     };
 
-    function switchTab(k, evt) {
+    window.switchTab = function(k, evt) {
       currentActiveTab = k;
       document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
       if(evt) evt.target.classList.add('active');
@@ -264,14 +226,14 @@
       });
       map.setView(d.gps, 13);
       marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
-    }
+    };
 
     let currentLat = 45.0800, currentLng = 7.6900;
     const map = L.map('map', { preferCanvas: true }).setView([currentLat, currentLng], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
     const marker = L.marker([currentLat, currentLng]).addTo(map).bindPopup('Flotta Test Torino').openPopup();
 
-    switchTab('auto', null);
+    window.switchTab('auto', null);
 
     if (gpsInterval) clearInterval(gpsInterval);
     gpsInterval = setInterval(() => {
@@ -286,7 +248,7 @@
     const timeLabels = ['10:00', '10:03', '10:05', '10:10', '10:15', '10:20', '10:25'];
     const timeValues = [3800, 3860, 3850, 3950, 3900, 4000, 3950];
 
-    const chart = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'line',
       data: {
         labels: timeLabels,
@@ -318,15 +280,15 @@
       document.getElementById('chart-modal').style.display = 'block';
     }
 
-    function closeChartModal() {
+    window.closeChartModal = function() {
       document.getElementById('chart-modal').style.display = 'none';
-    }
+    };
 
-    function changeTutorialVideo() {
+    window.changeTutorialVideo = function() {
       const select = document.getElementById('videoSelect');
       if (select.value === 'sim2') startSensorCanvasSimulation();
       else startWeldingCanvasSimulation();
-    }
+    };
 
     function startWeldingCanvasSimulation() {
       if (animId) cancelAnimationFrame(animId);
@@ -377,7 +339,7 @@
     }
     startWeldingCanvasSimulation();
 
-    function sendMsg(e) {
+    window.sendMsg = function(e) {
       if(e) e.preventDefault();
       const input = document.getElementById('msg');
       const user = document.getElementById('username').value || 'Operatore';
@@ -385,7 +347,7 @@
         socket.emit('chat-message', { user, text: input.value.trim() });
         input.value = '';
       }
-    }
+    };
 
     socket.on('chat-message', d => {
       const u = d.user || 'Anonimo';
@@ -400,129 +362,21 @@
       b.scrollTop = b.scrollHeight;
     });
 
-    function getPDFDocDefinition() {
+    window.downloadGeneratedPDF = function() {
       const activeData = tabsData[currentActiveTab];
       const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
-      
-      const tableRows = [
-        [
-          { text: 'PARAMETRO DI MISURA', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
-          { text: 'VALORE RILEVATO', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
-          { text: 'STATO DI CONFORMITÀ', bold: true, fillColor: '#0f172a', color: '#38bdf8' }
-        ]
-      ];
-      
-      activeData.metrics.forEach(m => {
-        tableRows.push([
-          { text: m.t, fontSize: 10 },
-          { text: m.v, bold: true, fontSize: 10 },
-          { text: m.st, color: m.ok ? '#16a34a' : '#d97706', bold: true, fontSize: 9 }
-        ]);
-      });
+      pdfMake.createPdf(getPDFDocDefinition(activeData, operatorName)).download(`Report_NMA_${currentActiveTab}.pdf`);
+    };
 
-      return {
-        pageSize: 'A4',
-        pageMargins: [35, 40, 35, 40],
-        content: [
-          {
-            columns: [
-              {
-                text: 'N.M.A. SYSTEMS & ENGINEERING\n' +
-                      'Precision Telemetry & Quality Assurance\n' +
-                      'Torino - San Benigno Canavese (TO)',
-                fontSize: 9,
-                color: '#475569'
-              },
-              {
-                text: 'CERTIFICATO DI VERIFICA TECNICA\n' +
-                      `Data: ${new Date().toLocaleDateString('it-IT')}\n` +
-                      `Ref: NMA-REP-${Math.floor(100000 + Math.random() * 900000)}`,
-                alignment: 'right',
-                fontSize: 9,
-                bold: true,
-                color: '#0284c7'
-              }
-            ]
-          },
-          { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
-          { text: '\n' },
-          { text: `RAPPORTO TECNICO DI TELEMETRIA: ${activeData.title.toUpperCase()}`, style: 'header' },
-          { text: `Operatore Responsabile: ${operatorName} | Nodo GPS: ${activeData.label}`, style: 'subheader' },
-          { text: '\n' },
-          { text: 'Normative di Riferimento Aziendali & Standard di Qualità:', style: 'sectionHeader' },
-          {
-            table: {
-              widths: ['*'],
-              body: [[
-                {
-                  fillColor: '#f8fafc',
-                  border: [true, true, true, true],
-                  borderColor: '#cbd5e1',
-                  text: '• ISO 9001:2015 (Gestione Qualità)\n' +
-                        '• ISO 14001:2015 (Gestione Ambientale)\n' +
-                        '• ISO 45001:2018 (Salute e Sicurezza sul Lavoro)\n' +
-                        '• ISO 3834-2 (Qualità Saldatura dei Metalli)\n' +
-                        '• UNI 9737 / UNI ISO 9606-1 (Qualificazione Operatori e Saldatori)',
-                  fontSize: 9,
-                  color: '#334155'
-                }
-              ]]
-            }
-          },
-          { text: '\n' },
-          { text: 'Rilevazioni Telemetriche in Tempo Reale:', style: 'sectionHeader' },
-          {
-            table: {
-              headerRows: 1,
-              widths: ['*', '*', '*'],
-              body: tableRows
-            },
-            layout: 'LightHorizontalLines'
-          },
-          { text: '\n' },
-          { text: 'Esito Collaudo Telemetrico:', style: 'sectionHeader' },
-          {
-            text: '✔ CONFORME AL 100% - Tutti i parametri acquisiti rientrano nei range di tolleranza previsti dal disciplinare di qualifica ISO/UNI.',
-            color: '#16a34a',
-            bold: true,
-            fontSize: 10
-          },
-          { text: '\n\n' },
-          {
-            columns: [
-              {
-                text: 'Firma Operatore Telemetria\n\n_______________________\n' + operatorName,
-                fontSize: 9,
-                alignment: 'left'
-              },
-              {
-                text: 'Firma Controllo Qualità N.M.A.\n\n_______________________\nIng. N. M. Amine',
-                fontSize: 9,
-                alignment: 'right'
-              }
-            ]
-          }
-        ],
-        styles: {
-          header: { fontSize: 14, bold: true, color: '#0f172a', margin: [0, 4, 0, 2] },
-          subheader: { fontSize: 10, italic: true, color: '#475569', margin: [0, 0, 0, 8] },
-          sectionHeader: { fontSize: 11, bold: true, color: '#0284c7', margin: [0, 6, 0, 4] }
-        }
-      };
-    }
-
-    function downloadGeneratedPDF() {
-      pdfMake.createPdf(getPDFDocDefinition()).download(`Report_NMA_${currentActiveTab}.pdf`);
-    }
-
-    function sharePdfToChat() {
+    window.sharePdfToChat = function() {
+      const activeData = tabsData[currentActiveTab];
       const user = document.getElementById('username').value || 'Operatore';
-      pdfMake.createPdf(getPDFDocDefinition()).getDataUrl((dataUrl) => {
-        socket.emit('chat-message', { user, text: `📄 **Report Ufficiale N.M.A. ISO/UNI Generato** [${tabsData[currentActiveTab].title}]`, file: dataUrl, fileName: `Report_NMA_${currentActiveTab}.pdf` });
+      pdfMake.createPdf(getPDFDocDefinition(activeData, user)).getDataUrl((dataUrl) => {
+        socket.emit('chat-message', { user, text: `📄 **Report Ufficiale N.M.A. ISO/UNI Generato** [${activeData.title}]`, file: dataUrl, fileName: `Report_NMA_${currentActiveTab}.pdf` });
       });
-    }
+    };
 
-    function sendFile(input) {
+    window.sendFile = function(input) {
       const user = document.getElementById('username').value || 'Operatore';
       const file = input.files[0];
       if (file) {
@@ -531,7 +385,7 @@
         reader.onload = function(e) { socket.emit('chat-message', { user, file: e.target.result, fileName: file.name }); };
         reader.readAsDataURL(file);
       }
-    }
+    };
   </script>
 </body>
 </html>
