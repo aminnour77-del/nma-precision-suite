@@ -33,33 +33,6 @@ io.on('connection', (socket) => {
     io.emit('chat-message', data);
   });
 
-  socket.on('call-user', (data) => {
-    socket.broadcast.emit('call-made', {
-      offer: data.offer,
-      socket: socket.id,
-      user: data.user,
-      isVideo: data.isVideo
-    });
-  });
-
-  socket.on('make-answer', (data) => {
-    socket.to(data.to).emit('answer-made', {
-      socket: socket.id,
-      answer: data.answer
-    });
-  });
-
-  socket.on('ice-candidate', (data) => {
-    socket.broadcast.emit('ice-candidate', {
-      candidate: data.candidate,
-      socket: socket.id
-    });
-  });
-
-  socket.on('end-call', () => {
-    socket.broadcast.emit('call-ended');
-  });
-
   socket.on('disconnect', () => {
     activeUsers.delete(socket.id);
   });

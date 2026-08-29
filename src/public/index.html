@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>N.M.A. SYSTEMS - Enterprise Telemetry & Real-Time Comms</title>
+  <title>N.M.A. SYSTEMS - Enterprise Telemetry</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -34,7 +34,7 @@
     .f1-val { font-weight: 800; color: #38bdf8; font-size: 12px; font-family: monospace; }
     
     #map { height: 180px; border-radius: 6px; }
-    #chat-box { height: 180px; overflow-y: auto; background: #0a1120; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
+    #chat-box { height: 210px; overflow-y: auto; background: #0a1120; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
     .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: #1e293b; max-width: 85%; word-break: break-word; }
     .chat-msg.me { background: #0369a1; margin-left: auto; }
     
@@ -42,18 +42,9 @@
     input[type="text"], select { padding: 6px 10px; background: #0a1120; border: 1px solid #1e293b; color: #fff; border-radius: 4px; font-size: 12px; }
     button { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
     .btn-green { background: #16a34a; }
-    .btn-red { background: #dc2626; }
 
     .iso-badge { display: inline-block; background: #1e293b; color: #38bdf8; font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-right: 3px; margin-bottom:3px; font-weight: bold; }
     .pdf-actions { display: flex; gap: 6px; margin-top: 6px; }
-
-    /* WebRTC Video Overlay */
-    #video-container { display: none; background: #000; border-radius: 6px; overflow: hidden; position: relative; height: 180px; margin-bottom: 8px; }
-    #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
-    #localVideo { width: 80px; height: 60px; object-fit: cover; position: absolute; bottom: 8px; right: 8px; border: 2px solid #0284c7; border-radius: 4px; background: #1e293b; }
-    
-    #incoming-call-banner { display: none; background: #16a34a; color: white; padding: 8px; border-radius: 6px; margin-bottom: 8px; text-align: center; font-weight: bold; font-size: 12px; animation: pulse 1s infinite alternate; }
-    @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; } }
 
     #chart-modal { display: none; position: absolute; top: 40px; left: 12px; right: 12px; background: #0f172a; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
   </style>
@@ -63,7 +54,7 @@
   <header>
     <div>
       <h1>N.M.A. SYSTEMS</h1>
-      <small style="color: #64748b;">Enterprise Telemetry & Real-Time Comms</small>
+      <small style="color: #64748b;">Enterprise Telemetry Suite</small>
     </div>
     <div>
       <button onclick="requestNotifPermission()" style="font-size:10px; padding:4px 8px; background:#334155;">🔔 Push Notifiche</button>
@@ -76,14 +67,6 @@
     <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Automation</button>
     <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura Precisione</button>
     <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Fleet</button>
-  </div>
-
-  <div id="incoming-call-banner">
-    <span id="caller-name">Chiamata In Arrivo...</span>
-    <div style="margin-top:6px; display:flex; gap:8px; justify-content:center;">
-      <button onclick="acceptCall()" class="btn-green">Accetta</button>
-      <button onclick="rejectCall()" class="btn-red">Rifiuta</button>
-    </div>
   </div>
 
   <div class="grid">
@@ -128,21 +111,10 @@
     </div>
 
     <div class="card">
-      <h2>💬 Chat Tecnica & WebRTC Comms</h2>
+      <h2>💬 Chat Tecnica & Condivisione File</h2>
       <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
         <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
         <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:120px; padding:3px;">
-      </div>
-
-      <div id="video-container">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <video id="localVideo" autoplay playsinline muted></video>
-      </div>
-
-      <div style="display:flex; gap:6px; margin-bottom:8px;">
-        <button onclick="startCall(false)" style="flex:1; background:#0284c7;">📞 Audio</button>
-        <button onclick="startCall(true)" style="flex:1; background:#0d9488;">📹 Video</button>
-        <button onclick="endCall()" class="btn-red" style="flex:1;">🔴 Termina</button>
       </div>
 
       <div id="chat-box"></div>
@@ -178,15 +150,6 @@
     let currentActiveTab = 'auto';
     let gpsInterval = null;
     let animId = null;
-
-    // WebRTC state
-    let localStream = null;
-    let peerConnection = null;
-    let pendingOffer = null;
-    let audioContext = null;
-    let ringtoneOsc = null;
-
-    const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
     function updateUsername() {
       const u = document.getElementById('username').value || 'Operatore';
@@ -376,120 +339,7 @@
     }
     startWeldingCanvasSimulation();
 
-    // WebRTC Logic
-    function startRingtone() {
-      try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        ringtoneOsc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        ringtoneOsc.type = 'sine';
-        ringtoneOsc.frequency.setValueAtTime(440, audioContext.currentTime);
-        gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-        ringtoneOsc.connect(gain);
-        gain.connect(audioContext.destination);
-        ringtoneOsc.start();
-      } catch(e){}
-    }
-
-    function stopRingtone() {
-      if (ringtoneOsc) { try { ringtoneOsc.stop(); } catch(e){} ringtoneOsc = null; }
-    }
-
-    async function startCall(isVideo) {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-        document.getElementById('localVideo').srcObject = localStream;
-        document.getElementById('video-container').style.display = 'block';
-
-        peerConnection = new RTCPeerConnection(rtcConfig);
-        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-
-        peerConnection.ontrack = e => {
-          document.getElementById('remoteVideo').srcObject = e.streams[0];
-        };
-
-        peerConnection.onicecandidate = e => {
-          if (e.candidate) socket.emit('ice-candidate', { candidate: e.candidate });
-        };
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        const user = document.getElementById('username').value || 'Operatore';
-        socket.emit('call-user', { offer, user, isVideo });
-      } catch (err) {
-        alert("Errore accesso Microfono/Videocamera: " + err.message);
-      }
-    }
-
-    socket.on('call-made', async data => {
-      pendingOffer = data;
-      document.getElementById('caller-name').innerText = `Chiamata ${data.isVideo ? 'Video' : 'Audio'} in arrivo da: ${data.user}`;
-      document.getElementById('incoming-call-banner').style.display = 'block';
-      startRingtone();
-    });
-
-    async function acceptCall() {
-      stopRingtone();
-      document.getElementById('incoming-call-banner').style.display = 'none';
-      if (!pendingOffer) return;
-
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: pendingOffer.isVideo, audio: true });
-        document.getElementById('localVideo').srcObject = localStream;
-        document.getElementById('video-container').style.display = 'block';
-
-        peerConnection = new RTCPeerConnection(rtcConfig);
-        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-
-        peerConnection.ontrack = e => {
-          document.getElementById('remoteVideo').srcObject = e.streams[0];
-        };
-
-        peerConnection.onicecandidate = e => {
-          if (e.candidate) socket.emit('ice-candidate', { candidate: e.candidate });
-        };
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(pendingOffer.offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        socket.emit('make-answer', { answer, to: pendingOffer.socket });
-      } catch(err) {
-        alert("Impossibile accettare chiamata: " + err.message);
-      }
-    }
-
-    function rejectCall() {
-      stopRingtone();
-      document.getElementById('incoming-call-banner').style.display = 'none';
-      pendingOffer = null;
-    }
-
-    socket.on('answer-made', async data => {
-      if (peerConnection) {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-      }
-    });
-
-    socket.on('ice-candidate', async data => {
-      if (peerConnection && data.candidate) {
-        try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e){}
-      }
-    });
-
-    function endCall() {
-      stopRingtone();
-      if (peerConnection) { peerConnection.close(); peerConnection = null; }
-      if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-      document.getElementById('video-container').style.display = 'none';
-      document.getElementById('incoming-call-banner').style.display = 'none';
-      socket.emit('end-call');
-    }
-
-    socket.on('call-ended', () => { endCall(); });
-
-    // Chat
+    // Chat Logic
     function sendMsg(e) {
       if(e) e.preventDefault();
       const input = document.getElementById('msg');
