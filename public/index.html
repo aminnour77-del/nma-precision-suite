@@ -113,7 +113,10 @@
       <small style="color: #64748b;">Enterprise Telemetry & Real-Time Asset Simulation Platform</small>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
+      
+      <button onclick="openAdminModal()" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #d97706; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;">⚙️ Configura Soglie</button>
       <span class="badge" id="alert-status">● SYSTEM STATUS: NOMINAL</span>
+
       <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: #0284c7;">5G RTK ACTIVE (0.4ms)</span>
     </div>
   </header>
@@ -130,7 +133,20 @@
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h2 id="module-title" style="margin:0;">🚗 Automotive Telemetry OBD-III</h2>
-        <div class="time-selector">
+        
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div class="time-selector" style="margin:0;">
+            <button class="time-btn active" id="btn-chart-line" onclick="toggleChartType('line', event)">📈 Telemetria Live</button>
+            <button class="time-btn" id="btn-chart-heatmap" onclick="toggleChartType('heatmap', event)">🔥 Heatmap Anomalie</button>
+          </div>
+          <div class="time-selector" style="margin:0;">
+            <span style="font-size:10px; color:#64748b;">Range:</span>
+            <button class="time-btn active" onclick="changeTimeRange('1h', event)">1 Ora</button>
+            <button class="time-btn" onclick="changeTimeRange('24h', event)">24 Ore</button>
+            <button class="time-btn" onclick="changeTimeRange('7d', event)">7 Giorni</button>
+          </div>
+        </div>
+
           <span style="font-size:10px; color:#64748b;">Range:</span>
           <button class="time-btn active" onclick="changeTimeRange('1h', event)">1 Ora</button>
           <button class="time-btn" onclick="changeTimeRange('24h', event)">24 Ore</button>
@@ -659,6 +675,39 @@ import { getTechnicalManualDefinition } from "/js/modules/manualGenerator.js";
       renderer.setSize(container.clientWidth, container.clientHeight);
     });
   </script>
+
+  <!-- Modal Configurazione Soglie -->
+  <div id="admin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,7,18,0.85); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#0f172a; border:1px solid #0284c7; width:420px; border-radius:10px; padding:20px; box-shadow:0 0 25px rgba(2,132,199,0.3); color:#fff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #1e293b; padding-bottom:10px;">
+        <h3 style="margin:0; color:#38bdf8; font-size:14px;">⚙️ Configurazione Soglie d'Allarme Admin</h3>
+        <button onclick="closeAdminModal()" style="background:none; border:none; color:#94a3b8; font-size:16px; cursor:pointer;">✖</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:11px;">
+        <div>
+          <label style="color:#94a3b8; display:block; margin-bottom:4px;">🚗 Temp. Freni Max (°C):</label>
+          <input type="number" id="threshold-brakes" value="350" style="width:100%; background:#030712; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px;">
+        </div>
+        <div>
+          <label style="color:#94a3b8; display:block; margin-bottom:4px;">🚜 Umidità Suolo Minima (%):</label>
+          <input type="number" id="threshold-soil" value="20" style="width:100%; background:#030712; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px;">
+        </div>
+        <div>
+          <label style="color:#94a3b8; display:block; margin-bottom:4px;">🏭 Vibrazioni RMS Max (g):</label>
+          <input type="number" step="0.01" id="threshold-vibe" value="0.07" style="width:100%; background:#030712; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px;">
+        </div>
+        <div>
+          <label style="color:#94a3b8; display:block; margin-bottom:4px;">🔧 Pressione PE Max Gas (Bar):</label>
+          <input type="number" step="0.1" id="threshold-gas" value="13.5" style="width:100%; background:#030712; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px;">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button onclick="saveThresholds()" class="btn-green" style="flex:1; padding:8px; text-align:center;">💾 Salva Soglie</button>
+        <button onclick="closeAdminModal()" style="flex:1; background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; cursor:pointer; font-size:11px;">Annulla</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
 <script>
@@ -672,4 +721,86 @@ import { getTechnicalManualDefinition } from "/js/modules/manualGenerator.js";
     const user = document.getElementById('username').value || 'Ing. N. M. Amine';
     pdfMake.createPdf(getTechnicalManualDefinition(user)).download('NMA_Manuale_Tecnico_SCADA.pdf');
   };
+</script>
+<script>
+  let activeChartMode = 'line';
+  let thresholds = {
+    brakes: 350,
+    soil: 20,
+    vibe: 0.07,
+    gas: 13.5
+  };
+
+  window.openAdminModal = function() {
+    document.getElementById('admin-modal').style.display = 'flex';
+  };
+
+  window.closeAdminModal = function() {
+    document.getElementById('admin-modal').style.display = 'none';
+  };
+
+  window.saveThresholds = function() {
+    thresholds.brakes = parseFloat(document.getElementById('threshold-brakes').value) || 350;
+    thresholds.soil = parseFloat(document.getElementById('threshold-soil').value) || 20;
+    thresholds.vibe = parseFloat(document.getElementById('threshold-vibe').value) || 0.07;
+    thresholds.gas = parseFloat(document.getElementById('threshold-gas').value) || 13.5;
+    
+    if (typeof addLog === 'function') {
+      addLog(`⚙️ Soglie d'allarme Admin aggiornate in tempo reale.`, false);
+    }
+    closeAdminModal();
+  };
+
+  window.toggleChartType = function(mode, evt) {
+    activeChartMode = mode;
+    document.getElementById('btn-chart-line').classList.remove('active');
+    document.getElementById('btn-chart-heatmap').classList.remove('active');
+    evt.target.classList.add('active');
+
+    if (mode === 'heatmap') {
+      renderHeatmapChart();
+    } else {
+      if (typeof updateChart === 'function' && typeof tabsData !== 'undefined' && typeof currentTab !== 'undefined') {
+        updateChart(tabsData[currentTab].chart);
+      }
+    }
+  };
+
+  function renderHeatmapChart() {
+    if (typeof myChart === 'undefined') return;
+    const hours = ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
+    const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+    
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+      for (let j = 0; j < 12; j++) {
+        data.push([j, i, Math.floor(Math.random() * 12)]);
+      }
+    }
+
+    const option = {
+      tooltip: { position: 'top' },
+      grid: { height: '65%', top: '10%' },
+      xAxis: { type: 'category', data: hours, splitArea: { show: true }, axisLabel: { color: '#94a3b8' } },
+      yAxis: { type: 'category', data: days, splitArea: { show: true }, axisLabel: { color: '#94a3b8' } },
+      visualMap: {
+        min: 0,
+        max: 12,
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: '0%',
+        inRange: { color: ['#0f172a', '#0284c7', '#f59e0b', '#ef4444'] },
+        textStyle: { color: '#94a3b8' }
+      },
+      series: [{
+        name: 'Eventi Anomalia',
+        type: 'heatmap',
+        data: data,
+        label: { show: false },
+        emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+      }]
+    };
+    myChart.setOption(option, true);
+  }
 </script>
