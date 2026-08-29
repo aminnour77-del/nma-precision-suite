@@ -174,7 +174,6 @@
       }
     }
 
-    // Metriche avanzate con stato e range di tolleranza ISO/UNI
     const tabsData = {
       tubi: {
         title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
@@ -323,7 +322,6 @@
       document.getElementById('chart-modal').style.display = 'none';
     }
 
-    // Canvas Simulations
     function changeTutorialVideo() {
       const select = document.getElementById('videoSelect');
       if (select.value === 'sim2') startSensorCanvasSimulation();
@@ -379,7 +377,6 @@
     }
     startWeldingCanvasSimulation();
 
-    // Chat Logic
     function sendMsg(e) {
       if(e) e.preventDefault();
       const input = document.getElementById('msg');
@@ -403,7 +400,6 @@
       b.scrollTop = b.scrollHeight;
     });
 
-    // Motore PDF Certificato Aziendale N.M.A. Systems
     function getPDFDocDefinition() {
       const activeData = tabsData[currentActiveTab];
       const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
@@ -428,7 +424,6 @@
         pageSize: 'A4',
         pageMargins: [35, 40, 35, 40],
         content: [
-          // Header Aziendale
           {
             columns: [
               {
@@ -451,13 +446,9 @@
           },
           { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
           { text: '\n' },
-
-          // Titolo Modulo
           { text: `RAPPORTO TECNICO DI TELEMETRIA: ${activeData.title.toUpperCase()}`, style: 'header' },
           { text: `Operatore Responsabile: ${operatorName} | Nodo GPS: ${activeData.label}`, style: 'subheader' },
           { text: '\n' },
-
-          // Quadro Normativo
           { text: 'Normative di Riferimento Aziendali & Standard di Qualità:', style: 'sectionHeader' },
           {
             table: {
@@ -479,8 +470,6 @@
             }
           },
           { text: '\n' },
-
-          // Tabella Dati Telemetrici
           { text: 'Rilevazioni Telemetriche in Tempo Reale:', style: 'sectionHeader' },
           {
             table: {
@@ -491,8 +480,6 @@
             layout: 'LightHorizontalLines'
           },
           { text: '\n' },
-
-          // Esito Collaudo
           { text: 'Esito Collaudo Telemetrico:', style: 'sectionHeader' },
           {
             text: '✔ CONFORME AL 100% - Tutti i parametri acquisiti rientrano nei range di tolleranza previsti dal disciplinare di qualifica ISO/UNI.',
@@ -501,8 +488,6 @@
             fontSize: 10
           },
           { text: '\n\n' },
-
-          // Blocco Firma
           {
             columns: [
               {
