@@ -173,7 +173,11 @@
   </div>
 
   <script>
-    const socket = io();
+    const socket = io({
+      transports: ['websocket', 'polling'],
+      reconnection: true
+    });
+
     let audioCtx = null;
     let ringtoneInterval = null;
     let currentActiveTab = 'auto';
@@ -364,7 +368,6 @@
         
         let xPos = 40 + (progress % 240);
         c.fillStyle = '#0284c7'; c.fillRect(40, 68, progress % 240, 4);
-        
         c.fillStyle = '#38bdf8'; c.beginPath(); c.arc(xPos, 70, 6 + Math.random()*3, 0, Math.PI*2); c.fill();
         c.fillStyle = '#f59e0b'; c.beginPath(); c.arc(xPos, 70, 3, 0, Math.PI*2); c.fill();
 
@@ -477,16 +480,24 @@
       }
     }
 
-    // WebRTC & Fallback Loopback per test autonomo
+    // --- LOGICA WEBRTC PER CHIAMATE E VIDEOCHIAMATE MOBILE ---
     let localStream = null, peerConnection = null, pendingOffer = null, targetSocketId = null, callIsVideo = false;
     let iceCandidatesQueue = [];
-    const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+    
+    const config = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
+    };
 
     async function getOptimizedMedia(video) {
-      return await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         audio: { echoCancellation: true, noiseSuppression: true },
-        video: video ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 25 } } : false
-      });
+        video: video ? { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 360 } } : false
+      };
+      return await navigator.mediaDevices.getUserMedia(constraints);
     }
 
     async function startCall(video) {
@@ -496,22 +507,20 @@
       try {
         localStream = await getOptimizedMedia(video);
         const lVideo = document.getElementById('localVideo');
-        const rVideo = document.getElementById('remoteVideo');
-        
         lVideo.srcObject = localStream;
         lVideo.style.display = video ? 'block' : 'none';
-        
-        // Modalità Loopback automatica se testato su una sola scheda
-        rVideo.srcObject = localStream;
-        rVideo.style.display = video ? 'block' : 'none';
-        
+        lVideo.play().catch(()=>{});
+
         document.getElementById('btn-end').style.display = 'block';
 
         peerConnection = new RTCPeerConnection(config);
         localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
 
         peerConnection.ontrack = e => {
+          const rVideo = document.getElementById('remoteVideo');
           rVideo.srcObject = e.streams[0];
+          rVideo.style.display = video ? 'block' : 'none';
+          rVideo.play().catch(()=>{});
         };
 
         peerConnection.onicecandidate = e => {
@@ -524,7 +533,7 @@
         await peerConnection.setLocalDescription(offer);
         socket.emit('call-user', { offer, isVideo: video, username: document.getElementById('username').value });
       } catch (e) {
-        alert("Errore accesso microfono/fotocamera: " + e.message);
+        alert("Errore accesso fotocamera/microfono: " + e.message);
       }
     }
 
@@ -535,7 +544,7 @@
       iceCandidatesQueue = [];
       
       startRingtone();
-      triggerNotif(`📞 CHIAMATA DA ${d.username.toUpperCase()}`, "Tocca per rispondere subito");
+      triggerNotif(`📞 CHIAMATA DA ${d.username.toUpperCase()}`, "Tocca per rispondere");
       
       document.getElementById('callerName').innerText = `📞 CHIAMATA IN ARRIVO DA ${d.username}...`;
       document.getElementById('incomingCallBox').style.display = 'block';
@@ -550,17 +559,18 @@
       try {
         localStream = await getOptimizedMedia(callIsVideo);
         const lVideo = document.getElementById('localVideo');
-        const rVideo = document.getElementById('remoteVideo');
-        
         lVideo.srcObject = localStream;
         lVideo.style.display = callIsVideo ? 'block' : 'none';
+        lVideo.play().catch(()=>{});
 
         peerConnection = new RTCPeerConnection(config);
         localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
 
         peerConnection.ontrack = e => {
+          const rVideo = document.getElementById('remoteVideo');
           rVideo.srcObject = e.streams[0];
           rVideo.style.display = callIsVideo ? 'block' : 'none';
+          rVideo.play().catch(()=>{});
         };
 
         peerConnection.onicecandidate = e => {
