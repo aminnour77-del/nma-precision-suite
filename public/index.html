@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>N.M.A. SYSTEMS - Enterprise 3D Telemetry Suite</title>
+  <title>N.M.A. SYSTEMS - Enterprise Digital Twin & Telemetry Suite</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <!-- Librerie Grafiche 3D avanzate -->
+
+  <!-- Librerie 3D e Grafiche Avanzate -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   
@@ -22,72 +21,75 @@
 
   <header>
     <div>
-      <h1>N.M.A. SYSTEMS 3D</h1>
-      <small style="color: #64748b;">Industrial Control Center & Real-Time Analytics</small>
+      <h1>N.M.A. SYSTEMS 🌐 DIGITAL TWIN</h1>
+      <small style="color: #64748b;">Telemetry & Real-Time Asset Simulation Platform</small>
     </div>
     <div>
-      <span class="badge">● NETWORK ONLINE 5G RTK</span>
+      <span class="badge">● 5G RTK ACTIVE (0.4ms)</span>
     </div>
   </header>
 
   <div class="selector-bar">
-    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Pipeline Gas 3D</button>
-    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC Robotics 3D</button>
-    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Precision Agri 3D</button>
-    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive OBD-III 3D</button>
+    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Pipeline Gas Engineering</button>
+    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Industrial Robotics</button>
+    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Precision Agriculture</button>
+    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Telemetry OBD-III</button>
   </div>
 
   <div class="grid">
+    <!-- Sezione Telemetria Avanzata -->
     <div class="card" style="grid-column: span 2;">
-      <h2 id="module-title">🚗 Automotive Telemetry OBD-III 3D</h2>
+      <h2 id="module-title">🚗 Automotive Telemetry OBD-III (Real-Time Sensor Suite)</h2>
       <div class="f1-grid" id="metrics-container"></div>
-      
-      <!-- Contenitore Grafico 3D ECharts -->
-      <div id="echarts3d" style="width: 100%; height: 260px; border-radius:8px; background: rgba(5, 8, 17, 0.5);"></div>
+      <div id="echarts2d" style="width: 100%; height: 280px; border-radius:8px;"></div>
     </div>
 
+    <!-- Mappa Tattica -->
     <div class="card">
-      <h2>🌍 GPS Global Network & Tactical Radar</h2>
+      <h2>🌍 GPS Global Tactical Radar</h2>
       <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Torino Control</span></div>
-        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" id="dyn-latency" style="color:#4ade80;">9 ms</span></div>
-        <div class="f1-box"><span class="f1-title">Segnale</span><span class="f1-val" style="color:#4ade80;">RTK FULL</span></div>
+        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Torino Flotta</span></div>
+        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
+        <div class="f1-box"><span class="f1-title">Stato</span><span class="f1-val" style="color:#4ade80;">TRACKING</span></div>
       </div>
       <div id="map"></div>
     </div>
   </div>
 
   <div class="grid">
+    <!-- Render 3D Contestuale dell'Asset -->
     <div class="card">
-      <h2>🌐 Render 3D Interattivo Componente (Three.js)</h2>
-      <div id="three-canvas-container" style="width: 100%; height: 160px; border-radius: 8px; background: #030712; position: relative;"></div>
-      <small style="color: #64748b; display: block; margin-top: 4px; text-align: center;">Ruota e ispeziona il modulo telemetrico in tempo reale</small>
+      <h2>🚘 Gemello Digitale 3D (Interactive Asset Twin)</h2>
+      <div id="three-canvas-container" style="width: 100%; height: 180px; border-radius: 8px; background: #030712; position: relative;"></div>
+      <small id="asset-label" style="color: #38bdf8; display: block; margin-top: 6px; text-align: center; font-weight: bold;">Rendering Modello 3D Asset...</small>
     </div>
 
+    <!-- Chat Operativa -->
     <div class="card">
-      <h2>💬 Tactical Chat & Live Feeds</h2>
+      <h2>💬 Operational Command Chat</h2>
       <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
         <span style="font-size:11px; color:#94a3b8;">Operatore:</span>
         <input type="text" id="username" value="Ing_NMA" style="width:120px; padding:3px;">
       </div>
       <div id="chat-box"></div>
       <form onsubmit="sendMsg(event)" class="chat-input-group">
-        <input type="text" id="msg" placeholder="Comando o messaggio..." style="flex:1;">
+        <input type="text" id="msg" placeholder="Inserisci nota o comando..." style="flex:1;">
         <button type="submit" class="btn-green">Invia</button>
       </form>
     </div>
 
+    <!-- Certificazione ISO/UNI -->
     <div class="card">
-      <h2>📄 ISO/UNI Compliance PDF Engine</h2>
+      <h2>📜 ISO/UNI Certification Engine</h2>
       <div style="margin-bottom:8px;">
-        <span class="iso-badge">ISO 9001</span>
+        <span class="iso-badge">ISO 9001:2015</span>
         <span class="iso-badge">ISO 14001</span>
         <span class="iso-badge">ISO 45001</span>
-        <span class="iso-badge">ISO 3834-2</span>
         <span class="iso-badge">UNI 9737</span>
+        <span class="iso-badge">UNI ISO 9606-1</span>
       </div>
-      <p style="font-size:11px; color:#94a3b8;">Esporta instantaneamente la documentazione di collaudo con firma digitale e certificazione automatica.</p>
-      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%;">📥 Genera Certificato PDF</button>
+      <p style="font-size:11px; color:#94a3b8;">Genera reportistica di collaudo e validazione formale in formato PDF con tracciabilità dei dati sensoristici.</p>
+      <button onclick="downloadGeneratedPDF()" class="btn-green" style="width:100%;">📥 Scarica Report di Collaudo PDF</button>
     </div>
   </div>
 
@@ -95,70 +97,143 @@
     import { getPDFDocDefinition } from '/js/modules/pdfGenerator.js';
 
     const socket = io();
-    let currentActiveTab = 'auto';
+    let currentTab = 'auto';
 
-    // Inizializzazione Grafico 3D con ECharts GL
-    const chart3DDom = document.getElementById('echarts3d');
-    const my3DChart = echarts.init(chart3DDom);
+    // Inizializzazione Grafico ECharts PRO
+    const chartDom = document.getElementById('echarts2d');
+    const myChart = echarts.init(chartDom);
 
-    function render3DGraph() {
-      const data3D = [];
-      for (let x = 0; x < 12; x++) {
-        for (let y = 0; y < 12; y++) {
-          const z = Math.sin(x / 2) * Math.cos(y / 2) * 4 + 5;
-          data3D.push([x, y, z]);
-        }
-      }
-
-      const option = {
-        tooltip: {},
-        backgroundColor: 'transparent',
-        visualMap: {
-          show: false,
-          min: 0, max: 10,
-          inRange: { color: ['#0284c7', '#38bdf8', '#4ade80'] }
-        },
-        xAxis3D: { type: 'value', name: 'Tempo', axisLine: { lineStyle: { color: '#334155' } } },
-        yAxis3D: { type: 'value', name: 'Frequenza', axisLine: { lineStyle: { color: '#334155' } } },
-        zAxis3D: { type: 'value', name: 'Pressione/RPM', axisLine: { lineStyle: { color: '#334155' } } },
-        grid3D: {
-          boxWidth: 140, boxDepth: 80, boxHeight: 50,
-          light: { main: { intensity: 1.2 }, ambient: { intensity: 0.8 } },
-          viewControl: { alpha: 25, beta: 30, autoRotate: true, autoRotateSpeed: 4 }
-        },
-        series: [{
-          type: 'bar3D',
-          data: data3D.map(item => ({ value: [item[0], item[1], item[2]] })),
-          shading: 'lambert',
-          barSize: 0.8
-        }]
-      };
-      my3DChart.setOption(option);
-    }
-    render3DGraph();
-
-    // Render 3D Oggetto Rotante con Three.js
+    // Inizializzazione Three.js Engine
     const container = document.getElementById('three-canvas-container');
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    const geometry = new THREE.TorusKnotGeometry(1.2, 0.3, 100, 16);
-    const material = new THREE.MeshPhongMaterial({ color: 0x38bdf8, wireframe: true, emissive: 0x0284c7 });
-    const torusKnot = new THREE.Mesh(geometry, material);
-    scene.add(torusKnot);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+    scene.add(new THREE.AmbientLight(0x38bdf8, 0.6));
 
-    const light = new THREE.PointLight(0xffffff, 1, 100);
-    light.position.set(10, 10, 10);
-    scene.add(light);
-    camera.position.z = 4.5;
+    let activeMeshGroup = new THREE.Group();
+    scene.add(activeMeshGroup);
+    camera.position.set(0, 2, 5);
+    camera.lookAt(0, 0, 0);
+
+    // Costruttori di Modelli 3D Procedurali Contestuali
+    function createCarModel() {
+      const group = new THREE.Group();
+      const bodyGeo = new THREE.BoxGeometry(2.2, 0.5, 1);
+      const bodyMat = new THREE.MeshPhongMaterial({ color: 0x0284c7, wireframe: false, shininess: 100 });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      group.add(body);
+
+      const cabinGeo = new THREE.BoxGeometry(1, 0.4, 0.8);
+      const cabinMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 });
+      const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+      cabin.position.set(-0.1, 0.4, 0);
+      group.add(cabin);
+
+      const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 16);
+      const wheelMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
+      [[-0.7, -0.25, 0.5], [0.7, -0.25, 0.5], [-0.7, -0.25, -0.5], [0.7, -0.25, -0.5]].forEach(pos => {
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(...pos);
+        group.add(wheel);
+      });
+      return group;
+    }
+
+    function createTractorModel() {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 0.9), new THREE.MeshPhongMaterial({ color: 0x16a34a }));
+      body.position.y = 0.2;
+      group.add(body);
+
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 0.8), new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 }));
+      cabin.position.set(-0.3, 0.9, 0);
+      group.add(cabin);
+
+      const bigWheelGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.2, 16);
+      const smallWheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 16);
+      const wMat = new THREE.MeshPhongMaterial({ color: 0x0f172a });
+
+      [[-0.4, 0, 0.5], [-0.4, 0, -0.5]].forEach(pos => {
+        const w = new THREE.Mesh(bigWheelGeo, wMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(...pos);
+        group.add(w);
+      });
+      [[0.5, -0.15, 0.45], [0.5, -0.15, -0.45]].forEach(pos => {
+        const w = new THREE.Mesh(smallWheelGeo, wMat);
+        w.rotation.x = Math.PI / 2;
+        w.position.set(...pos);
+        group.add(w);
+      });
+      return group;
+    }
+
+    function createRobotArmModel() {
+      const group = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 0.3, 16), new THREE.MeshPhongMaterial({ color: 0x475569 }));
+      group.add(base);
+
+      const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.2, 16), new THREE.MeshPhongMaterial({ color: 0x0284c7 }));
+      arm1.position.set(0, 0.7, 0);
+      arm1.rotation.z = -0.3;
+      group.add(arm1);
+
+      const joint = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshPhongMaterial({ color: 0x38bdf8 }));
+      joint.position.set(0.3, 1.2, 0);
+      group.add(joint);
+
+      const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 16), new THREE.MeshPhongMaterial({ color: 0xe2e8f0 }));
+      arm2.position.set(0.7, 1.2, 0);
+      arm2.rotation.z = Math.PI / 2;
+      group.add(arm2);
+      return group;
+    }
+
+    function createPipelineModel() {
+      const group = new THREE.Group();
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 3.0, 32), new THREE.MeshPhongMaterial({ color: 0x38bdf8, shininess: 80 }));
+      pipe.rotation.z = Math.PI / 2;
+      group.add(pipe);
+
+      const flangeGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
+      const flangeMat = new THREE.MeshPhongMaterial({ color: 0x64748b });
+      [-1.0, 0, 1.0].forEach(x => {
+        const flange = new THREE.Mesh(flangeGeo, flangeMat);
+        flange.rotation.z = Math.PI / 2;
+        flange.position.x = x;
+        group.add(flange);
+      });
+      return group;
+    }
+
+    function update3DAsset(tabKey) {
+      scene.remove(activeMeshGroup);
+      if (tabKey === 'auto') {
+        activeMeshGroup = createCarModel();
+        document.getElementById('asset-label').innerText = '🚘 Modello 3D: Autoveicolo OBD-III Telemetry';
+      } else if (tabKey === 'agri') {
+        activeMeshGroup = createTractorModel();
+        document.getElementById('asset-label').innerText = '🚜 Modello 3D: Trattore e Sensori Agricoltura 4.0';
+      } else if (tabKey === 'cnc') {
+        activeMeshGroup = createRobotArmModel();
+        document.getElementById('asset-label').innerText = '🏭 Modello 3D: Braccio Robotico CNC Multiasse';
+      } else if (tabKey === 'tubi') {
+        activeMeshGroup = createPipelineModel();
+        document.getElementById('asset-label').innerText = '🔧 Modello 3D: Condotta Gas Flangiata UNI 9737';
+      }
+      scene.add(activeMeshGroup);
+    }
 
     function animateThree() {
       requestAnimationFrame(animateThree);
-      torusKnot.rotation.x += 0.008;
-      torusKnot.rotation.y += 0.01;
+      if (activeMeshGroup) activeMeshGroup.rotation.y += 0.008;
       renderer.render(scene, camera);
     }
     animateThree();
@@ -166,18 +241,104 @@
     // Leaflet Dark Map Setup
     const map = L.map('map').setView([45.0800, 7.6900], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup("Nodo N.M.A. Attivo");
+    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup("Nodo Attivo");
 
-    // Dati e Gestione Tab
+    // Dati per i 4 moduli con 8 KPI ciascuno
     const tabsData = {
-      tubi: { title: '🔧 Pipeline Gas 3D Analysis', gps: [45.0600, 7.6700], label: 'Condotta Torino', metrics: [{t:'Pressione', v:'12.4 Bar', st:'OK', ok:true}, {t:'Portata', v:'420 m³/h', st:'OK', ok:true}, {t:'Temp', v:'14.2 °C', st:'OK', ok:true}, {t:'Catodico', v:'-1.15 V', st:'OK', ok:true}] },
-      cnc: { title: '⚙️ CNC Robotics 3D Analytics', gps: [45.0703, 7.6869], label: 'Fabbrica CNC', metrics: [{t:'OEE', v:'98.4 %', st:'EXCELLENT', ok:true}, {t:'RPM', v:'18,500', st:'HIGH', ok:true}, {t:'Coppia', v:'42.1 Nm', st:'OK', ok:true}, {t:'Vibrazioni', v:'0.02 g', st:'LOW', ok:true}] },
-      agri: { title: '🚜 Precision Agriculture 3D', gps: [45.1500, 7.7500], label: 'Campo Campo', metrics: [{t:'Umidità', v:'42 %', st:'OK', ok:true}, {t:'NDVI', v:'0.88', st:'HIGH', ok:true}, {t:'Resa', v:'4.8 Ha/h', st:'OPTIMAL', ok:true}, {t:'RTK', v:'±0.8 cm', st:'FIXED', ok:true}] },
-      auto: { title: '🚗 Automotive OBD-III 3D Telemetry', gps: [45.0800, 7.6900], label: 'Flotta Test', metrics: [{t:'RPM', v:'3,950', st:'NOMINAL', ok:true}, {t:'Turbo', v:'1.90 Bar', st:'BOOST', ok:true}, {t:'G-Force', v:'1.18 G', st:'SPORT', ok:true}, {t:'SoC', v:'98 %', st:'FULL', ok:true}] }
+      auto: {
+        title: '🚗 Automotive OBD-III Telemetry Platform',
+        gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        metrics: [
+          {t:'Regime', v:'3,950 RPM', st:'OK'}, {t:'Press. Turbo', v:'1.90 Bar', st:'BOOST'},
+          {t:'Temp. Olio', v:'96 °C', st:'OK'}, {t:'Rapporto AFR', v:'14.7:1', st:'STECHIO'},
+          {t:'G-Force Lat', v:'1.18 G', st:'SPORT'}, {t:'Temp. Freni', v:'295 °C', st:'IN RANGE'},
+          {t:'Consumo Live', v:'8.0 L/h', st:'ECO'}, {t:'Velocità', v:'124 km/h', st:'CRUISE'}
+        ],
+        chart: {
+          legend: ['Giri Motore (RPM)', 'Pressione Turbo (Bar x1000)'],
+          time: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25', '10:30'],
+          s1: [2100, 2800, 3950, 3200, 4100, 3800, 4200],
+          s2: [1200, 1500, 1900, 1600, 2100, 1850, 2200]
+        }
+      },
+      agri: {
+        title: '🚜 Precision Agriculture & Smart Farming',
+        gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
+        metrics: [
+          {t:'Umidità Suolo', v:'42 %', st:'OK'}, {t:'Indice NDVI', v:'0.85', st:'VIGOR'},
+          {t:'RPM Presa Forza', v:'540 RPM', st:'STD'}, {t:'Press. Idraulica', v:'185 Bar', st:'OK'},
+          {t:'Compattazione', v:'1.1 MPa', st:'NORMA'}, {t:'Resa Oraria', v:'4.5 Ha/h', st:'ALTA'},
+          {t:'Precisione RTK', v:'±1.0 cm', st:'CENTIMETRICA'}, {t:'Delta Resa', v:'+18 %', st:'GROWTH'}
+        ],
+        chart: {
+          legend: ['Umidità del Suolo (%)', 'Indice Vettoriale NDVI (x100)'],
+          time: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+          s1: [55, 50, 42, 38, 35, 40, 48],
+          s2: [80, 82, 85, 87, 86, 84, 83]
+        }
+      },
+      cnc: {
+        title: '🏭 CNC & Industrial Robotics Telemetry',
+        gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
+        metrics: [
+          {t:'OEE Totale', v:'97.2 %', st:'ECCELLENTE'}, {t:'RPM Mandrino', v:'18,500', st:'HIGH SPEED'},
+          {t:'Coppia NM', v:'42.1 Nm', st:'OK'}, {t:'Cos φ Potenza', v:'0.95', st:'EFFICIENTE'},
+          {t:'Vibrazioni RMS', v:'0.03 g', st:'BASSE'}, {t:'Avanzamento', v:'1,250 mm/m', st:'OK'},
+          {t:'Usura Utensile', v:'2.8 %', st:'BUONO'}, {t:'MTBF Stimato', v:'4,200 h', st:'AFFIDABILE'}
+        ],
+        chart: {
+          legend: ['Velocità Mandrino (RPM)', 'Livello Vibrazioni (g x10000)'],
+          time: ['Shift 1', 'Shift 2', 'Shift 3', 'Shift 4', 'Shift 5', 'Shift 6'],
+          s1: [12000, 15000, 18500, 18200, 18500, 16000],
+          s2: [200, 250, 300, 280, 290, 310]
+        }
+      },
+      tubi: {
+        title: '🔧 Gas Pipeline & Infrastructure Engineering',
+        gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
+        metrics: [
+          {t:'Pressione PE', v:'12.4 Bar', st:'NOMINALE'}, {t:'Portata Qv', v:'420 m³/h', st:'NOMINALE'},
+          {t:'Temp. Gas', v:'14.2 °C', st:'OK'}, {t:'Delta P', v:'0.01 Bar', st:'OTTIMALE'},
+          {t:'Acustica Perdit.', v:'0.0 dB', st:'ZERO LOSS'}, {t:'Pot. Catodico', v:'-1.15 V', st:'PROTEZIONE OK'},
+          {t:'Estensimetro', v:'12 microE', st:'STABILE'}, {t:'Saldatura ISO', v:'100 % OK', st:'UNI 9737'}
+        ],
+        chart: {
+          legend: ['Pressione Rete (Bar)', 'Portata Volumetric Vol (m³/h)'],
+          time: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+          s1: [12.1, 12.3, 12.8, 12.4, 12.2, 12.5, 12.2],
+          s2: [310, 280, 450, 420, 390, 480, 350]
+        }
+      }
     };
 
+    function updateChart(cData) {
+      const option = {
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(13, 20, 36, 0.9)', borderColor: '#38bdf8', textStyle: { color: '#fff' } },
+        legend: { data: cData.legend, textStyle: { color: '#94a3b8' }, top: 0 },
+        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        xAxis: { type: 'category', boundaryGap: false, data: cData.time, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
+        yAxis: { type: 'value', axisLine: { lineStyle: { color: '#334155' } }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#94a3b8' } },
+        series: [
+          {
+            name: cData.legend[0], type: 'line', smooth: true,
+            lineStyle: { width: 3, color: '#38bdf8' },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(56, 189, 248, 0.4)' }, { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }]) },
+            data: cData.s1
+          },
+          {
+            name: cData.legend[1], type: 'line', smooth: true,
+            lineStyle: { width: 3, color: '#4ade80' },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(74, 222, 128, 0.3)' }, { offset: 1, color: 'rgba(74, 222, 128, 0.0)' }]) },
+            data: cData.s2
+          }
+        ]
+      };
+      myChart.setOption(option, true);
+    }
+
     window.switchTab = function(k, evt) {
-      currentActiveTab = k;
+      currentTab = k;
       document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
       if(evt) evt.target.classList.add('active');
       const d = tabsData[k];
@@ -190,7 +351,8 @@
       });
       map.setView(d.gps, 13);
       marker.setLatLng(d.gps);
-      render3DGraph();
+      updateChart(d.chart);
+      update3DAsset(k);
     };
 
     window.switchTab('auto', null);
@@ -198,7 +360,7 @@
     window.sendMsg = function(e) {
       e.preventDefault();
       const input = document.getElementById('msg');
-      const user = document.getElementById('username').value || 'Operatore';
+      const user = document.getElementById('username').value || 'Ing_NMA';
       if (input.value.trim()) {
         socket.emit('chat-message', { user, text: input.value.trim() });
         input.value = '';
@@ -212,10 +374,17 @@
     });
 
     window.downloadGeneratedPDF = function() {
-      const activeData = tabsData[currentActiveTab];
+      const activeData = tabsData[currentTab];
       const user = document.getElementById('username').value || 'Ing. N. M. Amine';
-      pdfMake.createPdf(getPDFDocDefinition(activeData, user)).download(`NMA_Report_3D_${currentActiveTab}.pdf`);
+      pdfMake.createPdf(getPDFDocDefinition(activeData, user)).download(`NMA_Collaudo_${currentTab}.pdf`);
     };
+
+    window.addEventListener('resize', () => {
+      myChart.resize();
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
   </script>
 </body>
 </html>
