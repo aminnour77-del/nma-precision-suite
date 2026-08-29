@@ -67,3 +67,15 @@ button:hover { box-shadow: 0 0 12px var(--accent-glow); }
 .btn-green { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
 
 .iso-badge { display: inline-block; background: rgba(15, 23, 42, 0.8); color: var(--accent-blue); border: 1px solid var(--border-neon); font-size: 9px; padding: 3px 6px; border-radius: 4px; margin-right: 4px; margin-bottom:4px; font-weight: bold; }
+
+/* Fix Layout & Card Overflow */
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.btn-green {
+  font-size: 11px !important;
+  padding: 6px 8px !important;
+}
