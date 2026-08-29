@@ -53,10 +53,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('ice-candidate', (data) => {
-    io.to(data.to).emit('ice-candidate', {
-      candidate: data.candidate,
-      socket: socket.id
-    });
+    if (data.to) {
+      io.to(data.to).emit('ice-candidate', { candidate: data.candidate, socket: socket.id });
+    } else {
+      socket.broadcast.emit('ice-candidate', { candidate: data.candidate, socket: socket.id });
+    }
   });
 
   socket.on('end-call', () => {
@@ -65,10 +66,11 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     activeUsers.delete(socket.id);
+    socket.broadcast.emit('call-ended');
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server N.M.A. SYSTEMS attivo sulla porta ${PORT}`);
+  console.log(`Server N.M.A. SYSTEMS pronto sulla porta ${PORT}`);
 });
