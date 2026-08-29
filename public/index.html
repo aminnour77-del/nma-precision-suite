@@ -1,702 +1,425 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>N.M.A. SYSTEMS - Enterprise 3D Telemetry & AI Suite</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --bg-dark: #080c14;
-      --panel-bg: rgba(13, 20, 33, 0.95);
-      --panel-border: #1e293b;
-      --accent-cyan: #00f2fe;
-      --accent-blue: #3b82f6;
-      --accent-green: #10b981;
-      --accent-red: #ef4444;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; height: 100vh; width: 100vw; display: flex; flex-direction: column; }
-    
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 0 20px; background: #0b111e; border-bottom: 1px solid var(--panel-border);
-      height: 56px; flex-shrink: 0;
-    }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand-logo {
-      width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border-radius: 8px; display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 15px; color: #000; box-shadow: 0 0 10px rgba(0,242,254,0.3);
-    }
-    .brand-title { font-size: 15px; font-weight: 700; }
-    .brand-sub { font-size: 10px; color: var(--text-muted); }
-    
-    .nav-tabs { display: flex; gap: 4px; background: #04070d; padding: 3px; border-radius: 8px; border: 1px solid var(--panel-border); }
-    .tab-btn {
-      padding: 6px 12px; border: none; background: transparent; color: var(--text-muted);
-      font-size: 11px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
-    .tab-btn.active { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; }
-    
-    .top-actions { display: flex; align-items: center; gap: 8px; }
-    .btn-action {
-      padding: 6px 12px; border-radius: 6px; border: 1px solid var(--panel-border);
-      background: #1e293b; color: var(--text-main); font-size: 11px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;
-    }
-    .btn-action:hover { background: #334155; border-color: var(--accent-cyan); }
-    .btn-primary { background: linear-gradient(135deg, #10b981, #059669); border: none; }
-    
-    .audio-badge {
-      display: flex; align-items: center; gap: 6px; padding: 5px 10px;
-      border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(16,185,129,0.1);
-      border: 1px solid rgba(16,185,129,0.3); color: var(--accent-green); cursor: pointer;
-    }
-    .audio-badge.muted { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--accent-red); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>N.M.A. SYSTEMS - Enterprise Suite 3D & AI Copilot</title>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-    .dashboard-container {
-      display: grid; grid-template-columns: 1fr 420px; gap: 12px; padding: 12px;
-      height: calc(100vh - 56px); width: 100%; overflow: hidden;
-    }
-    
-    .left-column { display: flex; flex-direction: column; gap: 12px; height: 100%; min-width: 0; }
-    
-    .viewport-card {
-      position: relative; flex: 1.5; background: var(--panel-bg);
-      border: 1px solid var(--panel-border); border-radius: 8px; overflow: hidden; width: 100%; height: 100%;
-    }
-    #webgl-canvas { width: 100% !important; height: 100% !important; display: block; position: absolute; top: 0; left: 0; }
-    
-    .viewport-overlay {
-      position: absolute; top: 12px; left: 12px; pointer-events: none;
-      background: rgba(8, 12, 20, 0.85); padding: 8px 12px; border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(6px); z-index: 10;
-    }
-    .viewport-title { font-size: 12px; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; }
-    .viewport-subtitle { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-    
-    .controls-overlay { position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; z-index: 10; }
-    .icon-btn {
-      width: 28px; height: 28px; border-radius: 6px; background: rgba(15,23,42,0.85);
-      border: 1px solid var(--panel-border); color: #fff; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; font-size: 11px; transition: all 0.2s;
-    }
-    .icon-btn:hover { background: var(--accent-cyan); color: #000; }
-    
-    .chart-card {
-      flex: 1; background: var(--panel-bg); border: 1px solid var(--panel-border);
-      border-radius: 8px; padding: 10px; display: flex; flex-direction: column; width: 100%; height: 100%;
-    }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .card-title { font-size: 11px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-    .card-title i { color: var(--accent-cyan); }
-    
-    .chart-container { flex: 1; position: relative; width: 100%; height: 100%; min-height: 120px; overflow: hidden; }
-    #telemetryCanvas { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; }
-    
-    .right-column { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; }
-    
-    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .kpi-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px; }
-    .kpi-label { font-size: 9px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-    .kpi-value { font-size: 16px; font-weight: 800; color: var(--text-main); font-family: monospace; margin: 2px 0; }
-    .kpi-sub { font-size: 9px; color: var(--accent-green); display: flex; align-items: center; gap: 4px; }
-    
-    .stats-panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px; }
-    .stats-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10px; }
-    .stats-table th { text-align: left; padding: 4px; color: var(--text-muted); border-bottom: 1px solid var(--panel-border); font-size: 9px; }
-    .stats-table td { padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .badge-pass { background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; }
-    
-    .health-bar-container { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-    .health-info { display: flex; justify-content: space-between; font-size: 10px; }
-    .progress-track { height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue)); border-radius: 2px; }
-    
-    .fft-container { display: flex; align-items: flex-end; gap: 2px; height: 36px; margin-top: 6px; padding-top: 4px; border-top: 1px dashed var(--panel-border); }
-    .fft-bar { flex: 1; background: linear-gradient(0deg, #0284c7, var(--accent-cyan)); border-radius: 1px; }
-  </style>
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-card: #131c2e;
+      --bg-box: #0a1120;
+      --border-color: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #0284c7;
+      --accent-light: #38bdf8;
+    }
+
+    body.cad-theme {
+      --bg-main: #ffffff;
+      --bg-card: #f1f5f9;
+      --bg-box: #e2e8f0;
+      --border-color: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --accent: #0284c7;
+      --accent-light: #0369a1;
+    }
+
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 10px; background: var(--bg-main); color: var(--text-main); transition: background 0.3s, color 0.3s; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
+    h1 { margin: 0; color: var(--accent-light); font-size: 20px; font-weight: 800; }
+    
+    .top-actions { display: flex; gap: 6px; align-items: center; }
+    .badge { background: #16a34a; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    
+    .selector-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .selector-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; }
+    .selector-btn.active { background: var(--accent); color: white; border-color: var(--accent-light); }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; position: relative; }
+    .card h2 { font-size: 13px; margin-top: 0; color: var(--text-muted); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+    @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
+    .f1-box { background: var(--bg-box); padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); text-align: center; }
+    .f1-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; }
+    .f1-val { font-weight: 800; color: var(--accent-light); font-size: 12px; font-family: monospace; }
+    .f1-status { font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 2px; margin-top: 3px; display: inline-block; }
+    .st-ok { background: #065f46; color: #34d399; }
+    .st-warn { background: #854d0e; color: #fde047; }
+    .st-crit { background: #991b1b; color: #fca5a5; }
+
+    #three-container { width: 100%; height: 180px; background: #000; border-radius: 6px; position: relative; overflow: hidden; }
+    #map { height: 180px; border-radius: 6px; }
+    #chat-box { height: 160px; overflow-y: auto; background: var(--bg-box); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; }
+    .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: var(--border-color); max-width: 85%; }
+    .chat-msg.me { background: var(--accent); color: white; margin-left: auto; }
+    
+    .chat-input-group { display: flex; gap: 4px; }
+    input[type="text"], select { padding: 6px 10px; background: var(--bg-box); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-size: 12px; }
+    button { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
+    .btn-green { background: #16a34a; }
+    .btn-red { background: #dc2626; }
+
+    #sig-canvas { background: #ffffff; border: 1px solid var(--border-color); border-radius: 4px; cursor: crosshair; touch-action: none; width: 100%; height: 70px; }
+    .ai-copilot { background: rgba(2, 132, 199, 0.1); border: 1px solid var(--accent); padding: 8px; border-radius: 6px; font-size: 11px; color: var(--accent-light); margin-top: 6px; }
+  </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <div class="brand-logo">NMA</div>
-      <div>
-        <div class="brand-title">N.M.A. SYSTEMS Precision Suite</div>
-        <div class="brand-sub">Enterprise 3D Telemetry & AI Diagnostic Platform</div>
-      </div>
-    </div>
+  <header>
+    <div>
+      <h1>N.M.A. SYSTEMS</h1>
+      <small style="color: var(--text-muted);">Enterprise 3D Telemetry & AI Copilot Suite</small>
+    </div>
+    <div class="top-actions">
+      <button onclick="toggleTheme()" style="background:#475569;">☀️ CAD Theme</button>
+      <span class="badge" id="online-status">ONLINE</span>
+    </div>
+  </header>
 
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchDomain('tubi')"><i class="fa-solid fa-pipe-valve"></i> Tubi Gas (UNI 9737)</button>
-      <button class="tab-btn" onclick="switchDomain('snc')"><i class="fa-solid fa-cubes-stacked"></i> SNC Inox Strutture</button>
-      <button class="tab-btn" onclick="switchDomain('automotive')"><i class="fa-solid fa-truck-monster"></i> Automotive & Fleet</button>
-      <button class="tab-btn" onclick="switchDomain('agricoltura')"><i class="fa-solid fa-seedling"></i> Agricoltura & Pompe</button>
-    </div>
+  <div class="selector-bar">
+    <button class="selector-btn" onclick="switchTab('tubi', event)">🔧 Tubazioni Gas (Pipeline)</button>
+    <button class="selector-btn" onclick="switchTab('cnc', event)">🏭 CNC & Automation</button>
+    <button class="selector-btn" onclick="switchTab('agri', event)">🚜 Agricoltura Precisione</button>
+    <button class="selector-btn active" onclick="switchTab('auto', event)">🚗 Automotive Fleet</button>
+  </div>
 
-    <div class="top-actions">
-      <div id="audioStatusBadge" class="audio-badge" onclick="toggleAudio()">
-        <i class="fa-solid fa-volume-high" id="audioIcon"></i><span id="audioText">Audio Attivo</span>
-      </div>
-      <button class="btn-action" onclick="testAlarm()"><i class="fa-solid fa-bell"></i> Test Allarme</button>
-      <button class="btn-action btn-primary" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> Report PDF</button>
-    </div>
-  </header>
+  <div class="grid">
+    <div class="card" style="grid-column: span 2;">
+      <h2 id="module-title">
+        <span>🚗 Automotive Telemetry & Digital Twin 3D</span>
+        <div>
+          <button class="btn-red" onclick="triggerFaultInjection()">⚠️ Simula Anomalia Critical</button>
+          <button onclick="resetMetrics()" style="background:#334155;">🔄 Resetta</button>
+        </div>
+      </h2>
 
-  <div class="dashboard-container">
-    <div class="left-column">
-      <div class="viewport-card">
-        <canvas id="webgl-canvas"></canvas>
-        <div class="viewport-overlay">
-          <div class="viewport-title" id="domainTitle"><i class="fa-solid fa-microchip"></i> Tubazione Gas Industriale (UNI 9737)</div>
-          <div class="viewport-subtitle" id="domainSub">Modello 3D Parametrico con Giunti di Saldatura e Sensori di Pressione</div>
-        </div>
-        <div class="controls-overlay">
-          <button class="icon-btn" onclick="resetCamera()" title="Reset Vista"><i class="fa-solid fa-rotate-right"></i></button>
-          <button class="icon-btn" onclick="toggleAutoRotate()" title="Ruota"><i class="fa-solid fa-arrows-spin"></i></button>
-          <button class="icon-btn" onclick="toggleWireframe()" title="Wireframe"><i class="fa-solid fa-border-all"></i></button>
-        </div>
-      </div>
+      <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
+        <div>
+          <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">DIGITAL TWIN 3D (INTERATTIVO)</div>
+          <div id="three-container"></div>
+        </div>
+        <div>
+          <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">ANALISI TELEMETRICA LIVE</div>
+          <canvas id="liveChart" height="150"></canvas>
+        </div>
+      </div>
 
-      <div class="chart-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fa-solid fa-chart-line"></i> Telemetria in Tempo Reale (Sensori Bus 20Hz)</div>
-          <div style="font-size: 9px; color: var(--text-muted); font-family: monospace;">STATUS: LIVE SAMPLING</div>
-        </div>
-        <div class="chart-container">
-          <canvas id="telemetryCanvas"></canvas>
-        </div>
-      </div>
-    </div>
+      <div class="f1-grid" id="metrics-container" style="margin-top:10px;"></div>
 
-    <div class="right-column">
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label" id="kpi1-label">Pressione Fluido</div>
-          <div class="kpi-value" id="kpi1-val">4.21 bar</div>
-          <div class="kpi-sub" id="kpi1-sub"><i class="fa-solid fa-circle-check"></i> Tolleranza ISO OK</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label" id="kpi2-label">Temperatura Operativa</div>
-          <div class="kpi-value" id="kpi2-val">24.5 °C</div>
-          <div class="kpi-sub" id="kpi2-sub"><i class="fa-solid fa-temperature-arrow-up"></i> Nominale (20-30°C)</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label" id="kpi3-label">Tensostress / Carico</div>
-          <div class="kpi-value" id="kpi3-val">128 MPa</div>
-          <div class="kpi-sub" id="kpi3-sub"><i class="fa-solid fa-shield-halved"></i> 58% del Limite</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label" id="kpi4-label">Indice Efficienza (OEE)</div>
-          <div class="kpi-value" id="kpi4-val">98.4%</div>
-          <div class="kpi-sub" id="kpi4-sub"><i class="fa-solid fa-bolt"></i> Performance Ottimale</div>
-        </div>
-      </div>
+      <div class="ai-copilot" id="ai-status">
+        🤖 <b>AI COPILOT:</b> Sistema in stato di operatività nominale. Tolleranze ISO/UNI rispettate.
+      </div>
+    </div>
 
-      <div class="stats-panel">
-        <div class="card-title" style="margin-bottom: 4px;"><i class="fa-solid fa-list-check"></i> Tolleranze & Parametri ISO / EN</div>
-        <table class="stats-table">
-          <thead><tr><th>Parametro ISO/UNI</th><th>Misurato</th><th>Soglia Ammessa</th><th>Esito</th></tr></thead>
-          <tbody id="toleranceTableBody"></tbody>
-        </table>
-      </div>
+    <div class="card">
+      <h2>🌍 GPS & Localizzazione Rete RTK</h2>
+      <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Flotta Test Torino</span></div>
+        <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" id="dyn-latency" style="color:#4ade80;">12 ms</span></div>
+        <div class="f1-box"><span class="f1-title">Segnale</span><span class="f1-val" id="dyn-signal" style="color:#4ade80;">5G RTK</span></div>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
 
-      <div class="stats-panel">
-        <div class="card-title"><i class="fa-solid fa-heart-pulse"></i> Salute Componenti & Frequenze FFT</div>
-        <div class="health-bar-container" id="healthContainer"></div>
-        <div style="margin-top: 8px; font-size: 9px; color: var(--text-muted); font-weight: 600;">ARMONICHE VIBRAZIONALI LIVE</div>
-        <div class="fft-container" id="fftContainer"></div>
-      </div>
+  <div class="grid">
+    <div class="card">
+      <h2>💬 Chat Tecnica & Condivisione File</h2>
+      <div style="margin-bottom:6px; display:flex; gap:6px; align-items:center;">
+        <span style="font-size:11px; color:var(--text-muted);">Operatore:</span>
+        <input type="text" id="username" value="Ing_NMA" onchange="updateUsername()" style="width:120px; padding:3px;">
+      </div>
 
-      <div class="stats-panel" style="border-left: 3px solid var(--accent-cyan);">
-        <div class="card-title" style="color: var(--accent-cyan);"><i class="fa-solid fa-brain"></i> Diagnostica AI NMA</div>
-        <div style="font-size: 10px; margin-top: 4px; line-height: 1.4; color: #cbd5e1;" id="aiDiagnosisText">Sistema in condizioni eccellenti. Nessuna anomalia rilevata.</div>
-      </div>
-    </div>
-  </div>
+      <div id="chat-box"></div>
+      <form onsubmit="sendMsg(event)" class="chat-input-group">
+        <input type="text" id="msg" placeholder="Scrivi un messaggio..." style="flex:1;">
+        <input type="file" id="photo-input" accept="image/*,application/pdf" style="display:none" onchange="sendFile(this)">
+        <button type="button" onclick="document.getElementById('photo-input').click()">📎</button>
+        <button type="submit" class="btn-green">Invia</button>
+      </form>
+    </div>
 
-  <script>
-    let currentDomain = 'tubi', autoRotate = true, isWireframe = false, audioEnabled = true, audioCtx = null;
+    <div class="card">
+      <h2>✍️ Firma Digitale & Generatore Report PDF</h2>
+      <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">FIRMA DIGITALE OPERATORE (DISEGNA CON MOUSE/TOUCH):</div>
+      <canvas id="sig-canvas" width="300" height="70"></canvas>
+      <div style="display:flex; justify-content:space-between; margin-top:4px;">
+        <button onclick="clearSignature()" style="font-size:9px; background:#475569; padding:2px 6px;">🗑️ Pulisci Firma</button>
+        <span style="font-size:9px; color:var(--text-muted);">ISO 9001 / UNI 9737 Qualified</span>
+      </div>
 
-    const domainConfigs = {
-      tubi: {
-        title: 'Tubazioni Gas Industriale (UNI 9737 / EN 10208)',
-        sub: 'Monitoraggio integrato di pressione, integrità giunto saldato TIG/Elettrofusione e portata gas.',
-        kpi1: { label: 'Pressione Metanodotto', val: '4.21 bar', sub: '<i class="fa-solid fa-circle-check"></i> Regolare (4.0 - 4.5)' },
-        kpi2: { label: 'Portata Calcolata', val: '428.5 m³/h', sub: '<i class="fa-solid fa-gauge"></i> Flusso Costante' },
-        kpi3: { label: 'Integrità Saldatura', val: '99.8%', sub: '<i class="fa-solid fa-certificate"></i> Conforme UNI 9737' },
-        kpi4: { label: 'Vibrazione Tubo (RMS)', val: '0.45 mm/s', sub: '<i class="fa-solid fa-wave-square"></i> Entro Limiti ISO' },
-        table: [
-          { name: 'Pressione di Prova (PE)', val: '6.00 bar', limit: '6.00 ± 0.2 bar', status: 'PASS' },
-          { name: 'Spessore Parete Tubo', val: '5.20 mm', limit: 'min 4.80 mm', status: 'PASS' },
-          { name: 'Tensione Giunto PE100', val: '12.4 MPa', limit: '< 18.0 MPa', status: 'PASS' }
-        ],
-        health: [{ label: 'Giunto Saldato PE100', pct: 98 }, { label: 'Guarnizione Flangia PN16', pct: 95 }, { label: 'Valvola di Saracinesca', pct: 92 }],
-        ai: 'Anagrafica tubazione conforme ISO 9606-1 / UNI 9737. Assenza di cali micro-pressori. Sigillatura eccellente.'
-      },
-      snc: {
-        title: 'SNC Carpenteria Inox & Strutture Metallo (EN 1090-2)',
-        sub: 'Analisi tensostrutturale in tempo reale, deflessione campate Inox AISI 304/316 e micro-vibrazioni.',
-        kpi1: { label: 'Tensostress Struttura', val: '142.5 MPa', sub: '<i class="fa-solid fa-shield"></i> Limite Snervamento 220 MPa' },
-        kpi2: { label: 'Deflessione Campata', val: '0.42 mm', sub: '<i class="fa-solid fa-ruler-combined"></i> Tolleranza L/500 OK' },
-        kpi3: { label: 'Temperatura Saldature', val: '22.8 °C', sub: '<i class="fa-solid fa-temperature-low"></i> Nessun Surriscaldamento' },
-        kpi4: { label: 'Carico Applicato', val: '1.85 Ton', sub: '<i class="fa-solid fa-weight-hanging"></i> Nominal Load' },
-        table: [
-          { name: 'Qualità Saldatura MIG/TIG', val: 'Classe EXC3', limit: 'EN 1090 EXC2/EXC3', status: 'PASS' },
-          { name: 'Parallelismo Montanti', val: '0.15 mm/m', limit: '< 0.50 mm/m', status: 'PASS' }
-        ],
-        health: [{ label: 'Pilastri Strutturali Inox', pct: 100 }, { label: 'Cordoni Saldatura TIG', pct: 96 }, { label: 'Piastre di Ancoraggio', pct: 94 }],
-        ai: 'Struttura in carpenteria Inox perfettamente stazionaria. Risposta dinamica ai carichi entro le specifiche EN 1090-2.'
-      },
-      automotive: {
-        title: 'Automotive & Logistica Flotta (Telemetria OBD-II / CAN-Bus)',
-        sub: 'Monitoraggio dinamico powertrain, pressione sovralimentazione, impianto frenante e stato sospensioni.',
-        kpi1: { label: 'Regime Motore PTP', val: '2,450 RPM', sub: '<i class="fa-solid fa-gauge-high"></i> In Range di Coppia' },
-        kpi2: { label: 'Pressione Turbo / Olio', val: '2.85 bar', sub: '<i class="fa-solid fa-oil-can"></i> Pressione Rettificata' },
-        kpi3: { label: 'Temp Refrigerante', val: '88.5 °C', sub: '<i class="fa-solid fa-temperature-half"></i> Temp di Regime' },
-        kpi4: { label: 'Stato Freni & Sospensioni', val: '94.2%', sub: '<i class="fa-solid fa-car-on"></i> Usura Minima' },
-        table: [
-          { name: 'Tensione Batteria Veicolo', val: '14.2 V', limit: '13.8 - 14.5 V', status: 'PASS' },
-          { name: 'Temp Disco Freno', val: '112 °C', limit: '< 350 °C', status: 'PASS' }
-        ],
-        health: [{ label: 'Gruppo Turbocompressore', pct: 93 }, { label: 'Pastiglie & Dischi Freno', pct: 89 }, { label: 'ECU CAN-Bus', pct: 100 }],
-        ai: 'Telemetria del veicolo / flotta ottimale. Rendimento termico ed elettrico regolare. Zero errori DTC nella memoria ECU.'
-      },
-      agricoltura: {
-        title: 'Agricoltura Inox & Impianti Pompaggio Idraulico',
-        sub: 'Telemetria idraulica per irrigazione ad alta pressione, elettropompe idrovore e sensori di terreno.',
-        kpi1: { label: 'Portata Pompe Idrauliche', val: '185.0 L/min', sub: '<i class="fa-solid fa-faucet-drip"></i> Portata Regolare' },
-        kpi2: { label: 'Pressione Collettore', val: '3.60 bar', sub: '<i class="fa-solid fa-water"></i> Pressurizzazione OK' },
-        kpi3: { label: 'Umidità Fluido / Terreno', val: '64.2%', sub: '<i class="fa-solid fa-droplet"></i> Target Raggiunto' },
-        kpi4: { label: 'Efficienza Motore Pompe', val: '95.8%', sub: '<i class="fa-solid fa-bolt"></i> Consumo Ridotto' },
-        table: [
-          { name: 'Assorbimento Elettrico', val: '4.8 kW', limit: '< 5.5 kW', status: 'PASS' },
-          { name: 'Tenuta Meccanica Pompa', val: '0.00 Drop', limit: 'Zero Perdite', status: 'PASS' }
-        ],
-        health: [{ label: 'Girante Pompa Centrifuga', pct: 95 }, { label: 'Valvola di Non Ritorno Inox', pct: 97 }, { label: 'Motore Trifase', pct: 98 }],
-        ai: 'Impianto di pompaggio agricolo / idraulico in perfetto bilanciamento idrodinamico. Zero cavitazione rilevata sulla girante.'
-      }
-    };
+      <div style="display:flex; gap:6px; margin-top:10px;">
+        <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1;">📥 Scarica PDF Certificato</button>
+        <button onclick="sharePdfToChat()" style="flex:1;">💬 Invia in Chat</button>
+      </div>
+    </div>
+  </div>
 
-    function initAudioContext() {
-      if (!audioCtx) {
-        const AudioClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioClass) audioCtx = new AudioClass();
-      }
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    }
-    ['click', 'touchstart', 'keydown'].forEach(evt => window.addEventListener(evt, initAudioContext, { once: false }));
+  <script>
+    const socket = io({ transports: ['websocket', 'polling'], reconnection: true });
+    let currentActiveTab = 'auto';
 
-    function toggleAudio() {
-      audioEnabled = !audioEnabled;
-      const badge = document.getElementById('audioStatusBadge');
-      const icon = document.getElementById('audioIcon');
-      const text = document.getElementById('audioText');
-      if (audioEnabled) {
-        badge.classList.remove('muted'); icon.className = 'fa-solid fa-volume-high'; text.innerText = 'Audio Attivo';
-        playBeep(880, 'sine', 0.1);
-      } else {
-        badge.classList.add('muted'); icon.className = 'fa-solid fa-volume-xmark'; text.innerText = 'Audio Disattivato';
-      }
-    }
+    function toggleTheme() {
+      document.body.classList.toggle('cad-theme');
+    }
 
-    function playBeep(freq = 600, type = 'sine', duration = 0.1) {
-      if (!audioEnabled) return;
-      initAudioContext();
-      if (!audioCtx) return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {}
-    }
+    function updateUsername() {
+      const u = document.getElementById('username').value || 'Operatore';
+      socket.emit('register-user', u);
+    }
+    socket.on('connect', () => { updateUsername(); });
 
-    function testAlarm() {
-      if (!audioEnabled) toggleAudio();
-      initAudioContext();
-      if (!audioCtx) return;
-      try {
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.linearRampToValueAtTime(1100, now + 0.25);
-        osc.frequency.linearRampToValueAtTime(500, now + 0.5);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(now); osc.stop(now + 0.5);
-      } catch (e) {}
-    }
+    function playAudioAlarm() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      } catch(e) {}
+    }
 
-    // --- THREE.JS ENGINE CON CENTRAMENTO AUTOMATICO ---
-    let scene, camera, renderer, controls, currentMeshGroup = null;
+    const sigCanvas = document.getElementById('sig-canvas');
+    const sigCtx = sigCanvas.getContext('2d');
+    let isDrawing = false;
 
-    function init3D() {
-      const card = document.querySelector('.viewport-card');
-      const canvas = document.getElementById('webgl-canvas');
-      
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x080c14);
+    function getPos(e) {
+      const rect = sigCanvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+    function startDrawing(e) { isDrawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }
+    function draw(e) { if (!isDrawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.strokeStyle = '#0284c7'; sigCtx.lineWidth = 2; sigCtx.stroke(); }
+    function stopDrawing() { isDrawing = false; }
 
-      camera = new THREE.PerspectiveCamera(45, card.clientWidth / card.clientHeight, 0.1, 1000);
+    sigCanvas.addEventListener('mousedown', startDrawing);
+    sigCanvas.addEventListener('mousemove', draw);
+    sigCanvas.addEventListener('mouseup', stopDrawing);
+    sigCanvas.addEventListener('touchstart', startDrawing);
+    sigCanvas.addEventListener('touchmove', draw);
+    sigCanvas.addEventListener('touchend', stopDrawing);
 
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(card.clientWidth, card.clientHeight, false); // false evita di sovrascrivere il CSS!
+    function clearSignature() {
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    }
 
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
+    const container = document.getElementById('three-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
 
-      const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
-      light1.position.set(5, 10, 7);
-      const light2 = new THREE.DirectionalLight(0x00f2fe, 0.8);
-      light2.position.set(-5, -5, -5);
-      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(light1, light2, ambient);
+    const geometry = new THREE.CylinderGeometry(1.2, 1.2, 4, 32);
+    const material = new THREE.MeshPhongMaterial({ color: 0x0284c7, wireframe: false, shininess: 100 });
+    const digitalTwinMesh = new THREE.Mesh(geometry, material);
+    digitalTwinMesh.rotation.z = Math.PI / 2;
+    scene.add(digitalTwinMesh);
 
-      const grid = new THREE.GridHelper(15, 15, 0x00f2fe, 0x1e293b);
-      grid.position.y = -1.5;
-      scene.add(grid);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(5, 5, 5);
+    scene.add(dirLight);
+    scene.add(new THREE.AmbientLight(0x333333));
+    camera.position.z = 5.5;
 
-      loadDomainModel('tubi');
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      digitalTwinMesh.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animate3D();
 
-      const resizeObserver = new ResizeObserver(() => {
-        const w = card.clientWidth, h = card.clientHeight;
-        if (w === 0 || h === 0) return;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h, false);
-      });
-      resizeObserver.observe(card);
+    const tabsData = {
+      tubi: {
+        title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
+        metrics: [
+          { t: 'Pressione Pe', v: '12.4 Bar', st: 'NOMINALE', ok: true },
+          { t: 'Portata Qv', v: '420 m³/h', st: 'NOMINALE', ok: true },
+          { t: 'Delta P', v: '0.01 Bar', st: 'OTTIMALE', ok: true },
+          { t: 'Saldatura ISO', v: '100 % OK', st: 'UNI 9737', ok: true }
+        ]
+      },
+      cnc: {
+        title: '⚙️ CNC & Industrial Automation Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
+        metrics: [
+          { t: 'OEE Total', v: '97.2 %', st: 'ECCELLENTE', ok: true },
+          { t: 'RPM Mandrino', v: '18,500', st: 'HIGH SPEED', ok: true },
+          { t: 'Vibrazioni RMS', v: '0.03 g', st: 'BASSE', ok: true },
+          { t: 'Temp Liquido', v: '20.8 °C', st: 'STABILE', ok: true }
+        ]
+      },
+      agri: {
+        title: '🚜 Agricoltura di Precisione Telemetry', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
+        metrics: [
+          { t: 'Umidità Suolo', v: '42 %', st: 'OTTIMALE', ok: true },
+          { t: 'Indice NDVI', v: '0.85', st: 'HIGH VIGOR', ok: true },
+          { t: 'Precisione RTK', v: '±1.0 cm', st: 'CENTIMETRICA', ok: true },
+          { t: 'Consumo L/h', v: '13.8 L/h', st: 'ECO MODE', ok: true }
+        ]
+      },
+      auto: {
+        title: '🚗 Automotive Telemetry OBD-III', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
+        metrics: [
+          { t: 'Regime Motore', v: '3,950 RPM', st: 'NOMINALE', ok: true },
+          { t: 'Press. Turbo', v: '1.90 Bar', st: 'BOOST OK', ok: true },
+          { t: 'Temp Olio', v: '96 °C', st: 'OTTIMALE', ok: true },
+          { t: 'Velocità', v: '124 km/h', st: 'CRUISE', ok: true }
+        ]
+      }
+    };
 
-      animate3D();
-    }
+    function switchTab(k, evt) {
+      currentActiveTab = k;
+      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+      if(evt) evt.target.classList.add('active');
+      const d = tabsData[k];
+      document.getElementById('module-title').querySelector('span').innerText = d.title;
+      document.getElementById('gps-label').innerText = d.label;
+      renderMetrics(d.metrics);
+      map.setView(d.gps, 13);
+      marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
+      resetMetrics();
+    }
 
-    function autoFitCamera(object) {
-      const box = new THREE.Box3().setFromObject(object);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
+    function renderMetrics(metrics) {
+      const c = document.getElementById('metrics-container');
+      c.innerHTML = '';
+      metrics.forEach(m => {
+        let stClass = 'st-ok';
+        if (m.st.includes('WARNING')) stClass = 'st-warn';
+        if (m.st.includes('CRITICO')) stClass = 'st-crit';
+        c.innerHTML += `
+          <div class="f1-box">
+            <span class="f1-title">${m.t}</span>
+            <span class="f1-val">${m.v}</span>
+            <span class="f1-status ${stClass}">${m.st}</span>
+          </div>`;
+      });
+    }
 
-      object.position.x = -center.x;
-      object.position.y = -center.y;
-      object.position.z = -center.z;
+    function triggerFaultInjection() {
+      playAudioAlarm();
+      digitalTwinMesh.material.color.setHex(0xef4444);
+      const activeData = tabsData[currentActiveTab];
+      activeData.metrics[0].v = '99.9 OVER';
+      activeData.metrics[0].st = 'CRITICO High P';
+      activeData.metrics[1].st = 'WARNING Delta';
+      renderMetrics(activeData.metrics);
+      document.getElementById('ai-status').innerHTML = '⚠️ <b>AI COPILOT:</b> Rilevata anomalia critica di pressione/sovraregime! Interruzione di sicurezza raccomandata.';
+    }
 
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 1.5;
+    function resetMetrics() {
+      digitalTwinMesh.material.color.setHex(0x0284c7);
+      document.getElementById('ai-status').innerHTML = '🤖 <b>AI COPILOT:</b> Sistema in stato di operatività nominale. Tolleranze ISO/UNI rispettate.';
+      const d = tabsData[currentActiveTab];
+      renderMetrics(d.metrics);
+    }
 
-      camera.position.set(0, maxDim * 0.3, Math.max(cameraZ, 5));
-      camera.lookAt(0, 0, 0);
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.update();
-      }
-    }
+    const map = L.map('map', { preferCanvas: true }).setView([45.0800, 7.6900], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup('Flotta Test Torino').openPopup();
 
-    function loadDomainModel(key) {
-      if (currentMeshGroup) scene.remove(currentMeshGroup);
-      currentMeshGroup = new THREE.Group();
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['10:00', '10:05', '10:10', '10:15', '10:20'],
+        datasets: [{ label: 'Telemetria Hz', data: [3800, 3860, 3950, 3900, 3950], borderColor: '#0284c7', tension: 0.3 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
+    });
 
-      const matSteel = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2, wireframe: isWireframe });
-      const matInox = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.1, wireframe: isWireframe });
-      const matDark = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.5, wireframe: isWireframe });
-      const matNeon = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.6, wireframe: isWireframe });
+    function sendMsg(e) {
+      if(e) e.preventDefault();
+      const input = document.getElementById('msg');
+      const user = document.getElementById('username').value || 'Operatore';
+      if (input.value.trim()) {
+        socket.emit('chat-message', { user, text: input.value.trim() });
+        input.value = '';
+      }
+    }
 
-      if (key === 'tubi') {
-        const pipeGeo = new THREE.CylinderGeometry(0.6, 0.6, 3.8, 32);
-        const pipe = new THREE.Mesh(pipeGeo, matSteel);
-        pipe.rotation.z = Math.PI / 2;
-        currentMeshGroup.add(pipe);
+    socket.on('chat-message', d => {
+      const u = d.user || 'Anonimo';
+      const me = u === (document.getElementById('username').value || 'Operatore');
+      const b = document.getElementById('chat-box');
+      let content = '';
+      if (d.text) content += `<div>${d.text}</div>`;
+      if (d.file) content += `<div style="margin-top:4px;">📎 Allegato: <a href="${d.file}" download="${d.fileName || 'file'}" style="color:#38bdf8; font-weight:bold;">${d.fileName || 'Scarica Allegato'}</a></div>`;
+      b.innerHTML += `<div class="chat-msg ${me ? 'me' : ''}"><b>${u}:</b> ${content}</div>`;
+      b.scrollTop = b.scrollHeight;
+    });
 
-        [-1.6, 1.6].forEach(x => {
-          const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.18, 32), matDark);
-          flange.rotation.z = Math.PI / 2; flange.position.x = x;
-          currentMeshGroup.add(flange);
-          for(let a=0; a<Math.PI*2; a+=Math.PI/4) {
-            const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 12), matInox);
-            bolt.rotation.z = Math.PI / 2;
-            bolt.position.set(x, Math.cos(a)*0.78, Math.sin(a)*0.78);
-            currentMeshGroup.add(bolt);
-          }
-        });
+    function downloadGeneratedPDF() {
+      const activeData = tabsData[currentActiveTab];
+      const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
+      const sigDataUrl = sigCanvas.toDataURL();
 
-        const weld = new THREE.Mesh(new THREE.TorusGeometry(0.61, 0.035, 16, 32), matNeon);
-        weld.rotation.y = Math.PI / 2;
-        currentMeshGroup.add(weld);
+      const docDef = {
+        pageSize: 'A4',
+        pageMargins: [35, 40, 35, 40],
+        content: [
+          {
+            columns: [
+              { text: 'N.M.A. SYSTEMS & ENGINEERING\nPrecision Telemetry & Quality Assurance', fontSize: 9, color: '#475569' },
+              { text: `CERTIFICATO UFFICIALE NMA-REP-${Math.floor(100000 + Math.random() * 900000)}\nData: ${new Date().toLocaleDateString('it-IT')}`, alignment: 'right', fontSize: 9, bold: true, color: '#0284c7' }
+            ]
+          },
+          { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
+          { text: '\n' },
+          { text: `RAPPORTO TELEMETRICO: ${activeData.title.toUpperCase()}`, fontSize: 13, bold: true, color: '#0f172a' },
+          { text: `Operatore: ${operatorName} | Nodo: ${activeData.label}`, fontSize: 9, color: '#475569', margin: [0, 0, 0, 10] },
+          { text: 'Conformità Normativa ISO 9001 / ISO 3834-2 / UNI 9737', fontSize: 10, bold: true, color: '#0284c7' },
+          { text: '\n' },
+          {
+            columns: [
+              { text: 'Firma Operatore Qualificato:', fontSize: 9, margin: [0, 20, 0, 0] },
+              { image: sigDataUrl, width: 140, alignment: 'right' }
+            ]
+          }
+        ]
+      };
+      pdfMake.createPdf(docDef).download(`Report_Certificato_NMA_${currentActiveTab}.pdf`);
+    }
 
-      } else if (key === 'snc') {
-        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.6, 0.2), matInox); p1.position.set(-1.4, 0, 0);
-        const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.6, 0.2), matInox); p2.position.set(1.4, 0, 0);
-        const topB = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.2, 0.2), matInox); topB.position.set(0, 1.2, 0);
-        const botB = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.2, 0.2), matInox); botB.position.set(0, -1.2, 0);
-        
-        currentMeshGroup.add(p1, p2, topB, botB);
+    function sharePdfToChat() {
+      downloadGeneratedPDF();
+    }
 
-        for(let i = -0.9; i <= 0.9; i += 0.6) {
-          const cross = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.08, 0.08), matSteel);
-          cross.position.set(i, 0, 0); cross.rotation.z = 0.75;
-          currentMeshGroup.add(cross);
-        }
+    function sendFile(input) {
+      const user = document.getElementById('username').value || 'Operatore';
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) { socket.emit('chat-message', { user, file: e.target.result, fileName: file.name }); };
+        reader.readAsDataURL(file);
+      }
+    }
 
-      } else if (key === 'automotive') {
-        const frameL = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 0.12), matDark); frameL.position.set(0, 0, -0.6);
-        const frameR = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 0.12), matDark); frameR.position.set(0, 0, 0.6);
-        const engine = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.8, 0.9), matSteel); engine.position.set(-0.8, 0.2, 0);
-        
-        currentMeshGroup.add(frameL, frameR, engine);
-
-        [[-1.0, -0.8], [-1.0, 0.8], [1.0, -0.8], [1.0, 0.8]].forEach(pos => {
-          const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 24), matInox);
-          disc.rotation.x = Math.PI / 2; disc.position.set(pos[0], -0.15, pos[1]);
-          const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.14), matNeon);
-          caliper.position.set(pos[0], -0.02, pos[1]);
-          currentMeshGroup.add(disc, caliper);
-        });
-
-      } else if (key === 'agricoltura') {
-        const motorBody = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 1.8, 32), matDark);
-        motorBody.rotation.z = Math.PI / 2; motorBody.position.set(-0.6, 0, 0);
-        
-        for(let x = -1.3; x <= 0.1; x += 0.18) {
-          const fin = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.03, 32), matSteel);
-          fin.rotation.z = Math.PI / 2; fin.position.x = x;
-          currentMeshGroup.add(fin);
-        }
-
-        const pumpVolute = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.45, 32), matInox);
-        pumpVolute.rotation.x = Math.PI / 2; pumpVolute.position.set(0.5, 0, 0);
-
-        const outPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.2, 24), matInox);
-        outPipe.position.set(0.5, 0.8, 0);
-
-        currentMeshGroup.add(motorBody, pumpVolute, outPipe);
-      }
-
-      scene.add(currentMeshGroup);
-      autoFitCamera(currentMeshGroup);
-    }
-
-    function animate3D() {
-      requestAnimationFrame(animate3D);
-      if (controls) controls.update();
-      if (currentMeshGroup && autoRotate) currentMeshGroup.rotation.y += 0.005;
-      renderer.render(scene, camera);
-    }
-
-    function resetCamera() { if (currentMeshGroup) autoFitCamera(currentMeshGroup); }
-    function toggleAutoRotate() { autoRotate = !autoRotate; playBeep(700, 'sine', 0.08); }
-    function toggleWireframe() {
-      isWireframe = !isWireframe;
-      if (currentMeshGroup) {
-        currentMeshGroup.traverse(c => { if (c.material) c.material.wireframe = isWireframe; });
-      }
-      playBeep(800, 'sine', 0.08);
-    }
-
-    function switchDomain(key) {
-      if (!domainConfigs[key]) return;
-      currentDomain = key;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      if (event && event.currentTarget) event.currentTarget.classList.add('active');
-
-      const conf = domainConfigs[key];
-      document.getElementById('domainTitle').innerHTML = `<i class="fa-solid fa-microchip"></i> ${conf.title}`;
-      document.getElementById('domainSub').innerText = conf.sub;
-
-      document.getElementById('kpi1-label').innerText = conf.kpi1.label; document.getElementById('kpi1-val').innerText = conf.kpi1.val; document.getElementById('kpi1-sub').innerHTML = conf.kpi1.sub;
-      document.getElementById('kpi2-label').innerText = conf.kpi2.label; document.getElementById('kpi2-val').innerText = conf.kpi2.val; document.getElementById('kpi2-sub').innerHTML = conf.kpi2.sub;
-      document.getElementById('kpi3-label').innerText = conf.kpi3.label; document.getElementById('kpi3-val').innerText = conf.kpi3.val; document.getElementById('kpi3-sub').innerHTML = conf.kpi3.sub;
-      document.getElementById('kpi4-label').innerText = conf.kpi4.label; document.getElementById('kpi4-val').innerText = conf.kpi4.val; document.getElementById('kpi4-sub').innerHTML = conf.kpi4.sub;
-
-      document.getElementById('toleranceTableBody').innerHTML = conf.table.map(r => `<tr><td><b>${r.name}</b></td><td>${r.val}</td><td>${r.limit}</td><td><span class="badge-pass">${r.status}</span></td></tr>`).join('');
-      document.getElementById('healthContainer').innerHTML = conf.health.map(i => `<div class="health-item"><div class="health-info"><span>${i.label}</span><span style="font-weight:700; color:var(--accent-cyan);">${i.pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${i.pct}%;"></div></div></div>`).join('');
-      document.getElementById('aiDiagnosisText').innerText = conf.ai;
-
-      loadDomainModel(key);
-      playBeep(900, 'sine', 0.1);
-    }
-
-    // --- CANVAS TELEMETRIA CORRETTO SENZA MOLTIPLICAZIONE SCALA ---
-    let tCanvas, tCtx, tBuffer = Array(50).fill(50);
-    
-    function initChart() {
-      tCanvas = document.getElementById('telemetryCanvas');
-      tCtx = tCanvas.getContext('2d');
-
-      const resizeChart = () => {
-        if (!tCanvas || !tCtx) return;
-        const container = tCanvas.parentElement;
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        const dpr = window.devicePixelRatio || 1;
-        tCanvas.width = w * dpr;
-        tCanvas.height = h * dpr;
-        tCtx.setTransform(dpr, 0, 0, dpr, 0, 0); // RESET FONDAMENTALE DELLA SCALA!
-      };
-
-      new ResizeObserver(resizeChart).observe(tCanvas.parentElement);
-      resizeChart();
-
-      setInterval(() => {
-        tBuffer.shift();
-        const prev = tBuffer[tBuffer.length - 1];
-        tBuffer.push(Math.min(Math.max(prev + (Math.random() - 0.49) * 12, 15), 85));
-        
-        const fft = document.getElementById('fftContainer');
-        if (fft) {
-          fft.innerHTML = Array.from({length: 18}).map(() => `<div class="fft-bar" style="height:${Math.floor(Math.random()*85)+10}%;"></div>`).join('');
-        }
-      }, 150);
-
-      renderChartLoop();
-    }
-
-    function renderChartLoop() {
-      requestAnimationFrame(renderChartLoop);
-      if (!tCtx || !tCanvas) return;
-      const w = tCanvas.clientWidth, h = tCanvas.clientHeight;
-      if (w === 0 || h === 0) return;
-
-      tCtx.clearRect(0, 0, w, h);
-
-      // Griglia sfondata
-      tCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      tCtx.lineWidth = 1;
-      for(let y = 0; y < h; y += 20) {
-        tCtx.beginPath(); tCtx.moveTo(0, y); tCtx.lineTo(w, y); tCtx.stroke();
-      }
-
-      // Linea di soglia rossa
-      tCtx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-      tCtx.setLineDash([4, 4]);
-      tCtx.beginPath(); tCtx.moveTo(0, h * 0.25); tCtx.lineTo(w, h * 0.25); tCtx.stroke();
-      tCtx.setLineDash([]);
-
-      // Grafico dinamico neon
-      const step = w / (tBuffer.length - 1);
-      const grad = tCtx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(0, 242, 254, 0.3)');
-      grad.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
-
-      tCtx.beginPath();
-      tBuffer.forEach((val, i) => {
-        const x = i * step, y = h - (val / 100) * h;
-        if (i === 0) tCtx.moveTo(x, y); else tCtx.lineTo(x, y);
-      });
-      
-      tCtx.strokeStyle = '#00f2fe';
-      tCtx.lineWidth = 2;
-      tCtx.stroke();
-
-      tCtx.lineTo(w, h); tCtx.lineTo(0, h); tCtx.closePath();
-      tCtx.fillStyle = grad;
-      tCtx.fill();
-    }
-
-    // --- GENERATORE REPORT PDF PROFESSIONALE PDFMAKE ---
-    function exportPDF() {
-      const conf = domainConfigs[currentDomain];
-      const docDef = {
-        pageSize: 'A4',
-        pageMargins: [35, 35, 35, 35],
-        background: function() {
-          return { rect: { x: 0, y: 0, w: 595.28, h: 841.89 }, color: '#080c14' };
-        },
-        content: [
-          {
-            columns: [
-              { text: 'N.M.A. SYSTEMS', fontSize: 18, bold: true, color: '#00f2fe' },
-              { text: 'REPORT TELEMETRICO E DI CONFORMITÀ', alignment: 'right', fontSize: 9, color: '#94a3b8', bold: true }
-            ]
-          },
-          { text: conf.title, fontSize: 12, bold: true, color: '#ffffff', margin: [0, 15, 0, 4] },
-          { text: `Data Emissione: ${new Date().toLocaleString('it-IT')}`, fontSize: 9, color: '#64748b', margin: [0, 0, 0, 15] },
-          {
-            table: {
-              widths: ['*', '*', '*', '*'],
-              body: [
-                [
-                  { text: conf.kpi1.label, style: 'kpiLabel' },
-                  { text: conf.kpi2.label, style: 'kpiLabel' },
-                  { text: conf.kpi3.label, style: 'kpiLabel' },
-                  { text: conf.kpi4.label, style: 'kpiLabel' }
-                ],
-                [
-                  { text: conf.kpi1.val, style: 'kpiVal' },
-                  { text: conf.kpi2.val, style: 'kpiVal' },
-                  { text: conf.kpi3.val, style: 'kpiVal' },
-                  { text: conf.kpi4.val, style: 'kpiVal' }
-                ]
-              ]
-            },
-            layout: 'noBorders',
-            margin: [0, 0, 0, 20]
-          },
-          { text: 'TOLLERANZE & PARAMETRI ISO / EN', fontSize: 10, bold: true, color: '#00f2fe', margin: [0, 5, 0, 6] },
-          {
-            table: {
-              headerRows: 1,
-              widths: ['*', 'auto', 'auto', 'auto'],
-              body: [
-                [{ text: 'Parametro ISO/UNI', style: 'th' }, { text: 'Misurato', style: 'th' }, { text: 'Soglia Ammessa', style: 'th' }, { text: 'Esito', style: 'th' }],
-                ...conf.table.map(r => [
-                  { text: r.name, style: 'td' },
-                  { text: r.val, style: 'td' },
-                  { text: r.limit, style: 'td' },
-                  { text: r.status, style: 'tdPass' }
-                ])
-              ]
-            },
-            layout: {
-              fillColor: function (i) { return i === 0 ? '#1e293b' : '#0d1421'; },
-              hLineWidth: function() { return 0.5; },
-              vLineWidth: function() { return 0; },
-              hLineColor: function() { return '#334155'; }
-            }
-          },
-          { text: 'DIAGNOSTICA AI NMA ENGINE', fontSize: 10, bold: true, color: '#00f2fe', margin: [0, 20, 0, 6] },
-          {
-            table: {
-              widths: ['*'],
-              body: [[{ text: conf.ai, fontSize: 9, color: '#f8fafc', margin: [8, 8, 8, 8] }]]
-            },
-            layout: { fillColor: function() { return '#1e293b'; } }
-          }
-        ],
-        styles: {
-          kpiLabel: { fontSize: 8, color: '#94a3b8', bold: true },
-          kpiVal: { fontSize: 13, color: '#00f2fe', bold: true },
-          th: { fontSize: 9, bold: true, color: '#00f2fe' },
-          td: { fontSize: 9, color: '#f8fafc' },
-          tdPass: { fontSize: 9, color: '#34d399', bold: true }
-        }
-      };
-      pdfMake.createPdf(docDef).download(`NMA_Certificato_${currentDomain}.pdf`);
-      playBeep(1000, 'sine', 0.15);
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      init3D();
-      initChart();
-      switchDomain('tubi');
-    });
-  </script>
+    switchTab('auto', null);
+  </script>
 </body>
 </html>
