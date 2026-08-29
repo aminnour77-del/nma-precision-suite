@@ -11,134 +11,130 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --bg-dark: #0a0e17;
-      --panel-bg: rgba(16, 24, 39, 0.85);
+      --bg-dark: #080c14;
+      --panel-bg: rgba(13, 20, 33, 0.95);
       --panel-border: #1e293b;
       --accent-cyan: #00f2fe;
-      --accent-blue: #4facfe;
+      --accent-blue: #3b82f6;
       --accent-green: #10b981;
       --accent-yellow: #f59e0b;
       --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-main); overflow-x: hidden; min-height: 100vh; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; height: 100vh; width: 100vw; display: flex; flex-direction: column; }
     
     header {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 24px; background: rgba(10, 14, 23, 0.95);
-      border-bottom: 1px solid var(--panel-border); backdrop-filter: blur(10px);
-      position: sticky; top: 0; z-index: 100;
+      padding: 10px 20px; background: #0b111e; border-bottom: 1px solid var(--panel-border);
+      height: 60px; flex-shrink: 0;
     }
     .brand { display: flex; align-items: center; gap: 12px; }
     .brand-logo {
-      width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
       border-radius: 8px; display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 18px; color: #000; box-shadow: 0 0 15px rgba(0,242,254,0.4);
+      font-weight: 900; font-size: 16px; color: #000; box-shadow: 0 0 12px rgba(0,242,254,0.4);
     }
-    .brand-title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
-    .brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+    .brand-title { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+    .brand-sub { font-size: 10px; color: var(--text-muted); }
     
-    .nav-tabs { display: flex; gap: 8px; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid var(--panel-border); }
+    .nav-tabs { display: flex; gap: 6px; background: #04070d; padding: 4px; border-radius: 8px; border: 1px solid var(--panel-border); }
     .tab-btn {
-      padding: 8px 16px; border: none; background: transparent; color: var(--text-muted);
-      font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+      padding: 6px 14px; border: none; background: transparent; color: var(--text-muted);
+      font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s;
       display: flex; align-items: center; gap: 8px;
     }
     .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
     .tab-btn.active { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.4); }
     
-    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
     .btn-action {
-      padding: 8px 14px; border-radius: 6px; border: 1px solid var(--panel-border);
-      background: #1e293b; color: var(--text-main); font-size: 12px; font-weight: 600;
+      padding: 7px 12px; border-radius: 6px; border: 1px solid var(--panel-border);
+      background: #1e293b; color: var(--text-main); font-size: 11px; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;
     }
     .btn-action:hover { background: #334155; border-color: var(--accent-cyan); }
     .btn-primary { background: linear-gradient(135deg, #10b981, #059669); border: none; }
-    .btn-primary:hover { background: linear-gradient(135deg, #34d399, #10b981); }
+    .btn-primary:hover { opacity: 0.9; }
     
     .audio-badge {
-      display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+      display: flex; align-items: center; gap: 6px; padding: 5px 10px;
       border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(16,185,129,0.1);
       border: 1px solid rgba(16,185,129,0.3); color: var(--accent-green); cursor: pointer;
     }
     .audio-badge.muted { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--accent-red); }
-    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+    .pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
 
     .dashboard-container {
-      display: grid; grid-template-columns: 1fr 420px; gap: 16px; padding: 16px;
-      max-width: 1800px; margin: 0 auto; height: calc(100vh - 65px);
+      display: grid; grid-template-columns: 1fr 440px; gap: 14px; padding: 14px;
+      height: calc(100vh - 60px); width: 100%; overflow: hidden;
     }
     
-    .left-column { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+    .left-column { display: flex; flex-direction: column; gap: 14px; height: 100%; min-width: 0; }
+    
     .viewport-card {
-      position: relative; flex: 1.2; min-height: 320px; background: var(--panel-bg);
-      border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden;
+      position: relative; flex: 1.4; background: var(--panel-bg);
+      border: 1px solid var(--panel-border); border-radius: 10px; overflow: hidden; min-height: 250px;
     }
-    #webgl-canvas { width: 100%; height: 100%; display: block; }
+    #webgl-canvas { width: 100%; height: 100%; display: block; position: absolute; top: 0; left: 0; }
     
     .viewport-overlay {
       position: absolute; top: 12px; left: 12px; pointer-events: none;
-      background: rgba(15, 23, 42, 0.75); padding: 10px 14px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+      background: rgba(8, 12, 20, 0.85); padding: 8px 12px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(6px); z-index: 10;
     }
-    .viewport-title { font-size: 13px; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; }
-    .viewport-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .viewport-title { font-size: 12px; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; }
+    .viewport-subtitle { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
     
     .controls-overlay {
-      position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; pointer-events: auto;
+      position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; z-index: 10;
     }
     .icon-btn {
-      width: 32px; height: 32px; border-radius: 6px; background: rgba(15,23,42,0.8);
+      width: 30px; height: 30px; border-radius: 6px; background: rgba(15,23,42,0.85);
       border: 1px solid var(--panel-border); color: #fff; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; font-size: 12px; transition: all 0.2s;
+      justify-content: center; cursor: pointer; font-size: 11px; transition: all 0.2s;
     }
     .icon-btn:hover { background: var(--accent-cyan); color: #000; }
     
     .chart-card {
-      flex: 1; min-height: 220px; background: var(--panel-bg); border: 1px solid var(--panel-border);
-      border-radius: 12px; padding: 14px; display: flex; flex-direction: column;
+      flex: 1; background: var(--panel-bg); border: 1px solid var(--panel-border);
+      border-radius: 10px; padding: 12px; display: flex; flex-direction: column; min-height: 180px;
     }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .card-title { font-size: 13px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .card-title { font-size: 12px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
     .card-title i { color: var(--accent-cyan); }
     
-    .chart-container { flex: 1; position: relative; width: 100%; }
-    #telemetryCanvas { width: 100%; height: 100%; display: block; }
+    .chart-container { flex: 1; position: relative; width: 100%; height: 100%; min-height: 100px; }
+    #telemetryCanvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
     
-    .right-column {
-      display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px;
-    }
+    .right-column { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; height: 100%; padding-right: 2px; }
     
     .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .kpi-card {
-      background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px;
-      padding: 12px; display: flex; flex-direction: column; gap: 4px; position: relative;
+      background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px;
+      padding: 10px; display: flex; flex-direction: column; gap: 2px;
     }
-    .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .kpi-value { font-size: 20px; font-weight: 800; color: var(--text-main); font-family: monospace; }
-    .kpi-sub { font-size: 10px; color: var(--accent-green); display: flex; align-items: center; gap: 4px; }
+    .kpi-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 18px; font-weight: 800; color: var(--text-main); font-family: monospace; }
+    .kpi-sub { font-size: 9px; color: var(--accent-green); display: flex; align-items: center; gap: 4px; }
     
-    .stats-panel {
-      background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px;
-    }
-    .stats-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
-    .stats-table th { text-align: left; padding: 6px; color: var(--text-muted); border-bottom: 1px solid var(--panel-border); }
-    .stats-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .badge-status { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; display: inline-block; }
+    .stats-panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; }
+    .stats-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11px; }
+    .stats-table th { text-align: left; padding: 4px; color: var(--text-muted); border-bottom: 1px solid var(--panel-border); font-size: 10px; }
+    .stats-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .badge-status { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
     .badge-pass { background: rgba(16,185,129,0.15); color: #34d399; }
     
-    .health-bar-container { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .health-bar-container { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
     .health-item { display: flex; flex-direction: column; gap: 2px; }
-    .health-info { display: flex; justify-content: space-between; font-size: 11px; }
-    .progress-track { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue)); border-radius: 3px; transition: width 0.5s ease; }
+    .health-info { display: flex; justify-content: space-between; font-size: 10px; }
+    .progress-track { height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue)); border-radius: 3px; transition: width 0.4s; }
     
-    .fft-container { display: flex; align-items: flex-end; gap: 4px; height: 50px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--panel-border); }
-    .fft-bar { flex: 1; background: linear-gradient(0deg, #0284c7, var(--accent-cyan)); border-radius: 2px 2px 0 0; transition: height 0.3s; }
+    .fft-container { display: flex; align-items: flex-end; gap: 3px; height: 42px; margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--panel-border); }
+    .fft-bar { flex: 1; background: linear-gradient(0deg, #0284c7, var(--accent-cyan)); border-radius: 1px; transition: height 0.15s ease-out; }
   </style>
 </head>
 <body>
@@ -164,7 +160,7 @@
         <span class="pulse-dot"></span><i class="fa-solid fa-volume-high" id="audioIcon"></i><span id="audioText">Audio Attivo</span>
       </div>
       <button class="btn-action" onclick="testAlarm()"><i class="fa-solid fa-bell"></i> Test Allarme</button>
-      <button class="btn-action btn-primary" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> Report Certificato PDF</button>
+      <button class="btn-action btn-primary" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> Report PDF</button>
     </div>
   </header>
 
@@ -177,18 +173,20 @@
           <div class="viewport-subtitle" id="domainSub">Modello 3D Parametrico con Giunti di Saldatura e Sensori di Pressione</div>
         </div>
         <div class="controls-overlay">
-          <button class="icon-btn" onclick="resetCamera()"><i class="fa-solid fa-rotate-right"></i></button>
-          <button class="icon-btn" onclick="toggleAutoRotate()"><i class="fa-solid fa-arrows-spin"></i></button>
-          <button class="icon-btn" onclick="toggleWireframe()"><i class="fa-solid fa-border-all"></i></button>
+          <button class="icon-btn" onclick="resetCamera()" title="Reset Vista"><i class="fa-solid fa-rotate-right"></i></button>
+          <button class="icon-btn" onclick="toggleAutoRotate()" title="Ruota"><i class="fa-solid fa-arrows-spin"></i></button>
+          <button class="icon-btn" onclick="toggleWireframe()" title="Wireframe"><i class="fa-solid fa-border-all"></i></button>
         </div>
       </div>
 
       <div class="chart-card">
         <div class="card-header">
-          <div class="card-title"><i class="fa-solid fa-chart-line"></i> Analisi Telemetrica Dinamica in Tempo Reale</div>
-          <div style="font-size: 11px; color: var(--text-muted); font-family: monospace;">FREQ: 20Hz | SAMPLING: HIGH-ACCURACY</div>
+          <div class="card-title"><i class="fa-solid fa-chart-line"></i> Telemetria in Tempo Reale (Sensori Bus 20Hz)</div>
+          <div style="font-size: 10px; color: var(--text-muted); font-family: monospace;">STATUS: LIVE SAMPLING</div>
         </div>
-        <div class="chart-container"><canvas id="telemetryCanvas"></canvas></div>
+        <div class="chart-container">
+          <canvas id="telemetryCanvas"></canvas>
+        </div>
       </div>
     </div>
 
@@ -217,7 +215,7 @@
       </div>
 
       <div class="stats-panel">
-        <div class="card-title" style="margin-bottom: 8px;"><i class="fa-solid fa-list-check"></i> Tolleranze & Parametri di Conformità</div>
+        <div class="card-title" style="margin-bottom: 4px;"><i class="fa-solid fa-list-check"></i> Tolleranze & Parametri ISO / EN</div>
         <table class="stats-table">
           <thead><tr><th>Parametro ISO/UNI</th><th>Misurato</th><th>Soglia Ammessa</th><th>Esito</th></tr></thead>
           <tbody id="toleranceTableBody"></tbody>
@@ -225,15 +223,15 @@
       </div>
 
       <div class="stats-panel">
-        <div class="card-title"><i class="fa-solid fa-heart-pulse"></i> Matrice di Salute Componenti & Vibrazioni (FFT)</div>
+        <div class="card-title"><i class="fa-solid fa-heart-pulse"></i> Salute Componenti & Frequenze FFT</div>
         <div class="health-bar-container" id="healthContainer"></div>
-        <div style="margin-top: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600;">SPETTRO ARMONICHE VIBRAZIONALI (FFT)</div>
+        <div style="margin-top: 10px; font-size: 10px; color: var(--text-muted); font-weight: 600;">ARMONICHE VIBRAZIONALI LIVE</div>
         <div class="fft-container" id="fftContainer"></div>
       </div>
 
-      <div class="stats-panel" style="border-left: 4px solid var(--accent-cyan);">
-        <div class="card-title" style="color: var(--accent-cyan);"><i class="fa-solid fa-brain"></i> Diagnostica Predittiva AI (NMA Engine)</div>
-        <div style="font-size: 12px; margin-top: 8px; line-height: 1.5;" id="aiDiagnosisText">Sistema in condizioni eccellenti. Nessuna anomalia rilevata.</div>
+      <div class="stats-panel" style="border-left: 3px solid var(--accent-cyan);">
+        <div class="card-title" style="color: var(--accent-cyan);"><i class="fa-solid fa-brain"></i> Diagnostica AI NMA</div>
+        <div style="font-size: 11px; margin-top: 6px; line-height: 1.4; color: #cbd5e1;" id="aiDiagnosisText">Sistema in condizioni eccellenti. Nessuna anomalia rilevata.</div>
       </div>
     </div>
   </div>
@@ -279,7 +277,7 @@
         kpi3: { label: 'Temp Refrigerante', val: '88.5 °C', sub: '<i class="fa-solid fa-temperature-half"></i> Temp di Regime' },
         kpi4: { label: 'Stato Freni & Sospensioni', val: '94.2%', sub: '<i class="fa-solid fa-car-on"></i> Usura Minima' },
         table: [
-          { name: 'Tension Batteria Veicolo', val: '14.2 V', limit: '13.8 - 14.5 V', status: 'PASS', class: 'badge-pass' },
+          { name: 'Tensione Batteria Veicolo', val: '14.2 V', limit: '13.8 - 14.5 V', status: 'PASS', class: 'badge-pass' },
           { name: 'Temp Disco Freno', val: '112 °C', limit: '< 350 °C', status: 'PASS', class: 'badge-pass' }
         ],
         health: [{ label: 'Gruppo Turbocompressore', pct: 93 }, { label: 'Pastiglie & Dischi Freno', pct: 89 }, { label: 'ECU CAN-Bus', pct: 100 }],
@@ -308,7 +306,6 @@
       }
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     }
-
     ['click', 'touchstart', 'keydown'].forEach(evt => window.addEventListener(evt, initAudioContext, { once: false }));
 
     function toggleAudio() {
@@ -324,7 +321,7 @@
       }
     }
 
-    function playBeep(freq = 600, type = 'sine', duration = 0.15) {
+    function playBeep(freq = 600, type = 'sine', duration = 0.1) {
       if (!audioEnabled) return;
       initAudioContext();
       if (!audioCtx) return;
@@ -332,7 +329,7 @@
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(); osc.stop(audioCtx.currentTime + duration);
@@ -349,104 +346,150 @@
         const gain = audioCtx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(500, now);
-        osc.frequency.linearRampToValueAtTime(1200, now + 0.25);
+        osc.frequency.linearRampToValueAtTime(1100, now + 0.25);
         osc.frequency.linearRampToValueAtTime(500, now + 0.5);
-        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.15, now);
         gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.5);
       } catch (e) {}
     }
 
-    let scene, camera, renderer, controls, currentMeshGroup = null;
+    let scene, camera, renderer, controls, currentMeshGroup = null, particleSystem = null;
 
     function init3D() {
-      const container = document.querySelector('.viewport-card');
+      const card = document.querySelector('.viewport-card');
       const canvas = document.getElementById('webgl-canvas');
+      
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0a0e17);
-      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(5, 4, 7);
+      scene.background = new THREE.Color(0x080c14);
 
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      camera = new THREE.PerspectiveCamera(45, card.clientWidth / card.clientHeight, 0.1, 1000);
+      camera.position.set(0, 2.5, 6);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(card.clientWidth, card.clientHeight);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-      const light = new THREE.DirectionalLight(0x00f2fe, 1.2);
-      light.position.set(10, 15, 10);
-      scene.add(light);
+      const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
+      light1.position.set(5, 10, 7);
+      const light2 = new THREE.DirectionalLight(0x00f2fe, 0.8);
+      light2.position.set(-5, -5, -5);
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(light1, light2, ambient);
 
-      const grid = new THREE.GridHelper(20, 20, 0x00f2fe, 0x1e293b);
-      grid.position.y = -1.5;
+      const grid = new THREE.GridHelper(15, 15, 0x00f2fe, 0x1e293b);
+      grid.position.y = -1.2;
       scene.add(grid);
 
       loadDomainModel('tubi');
+
+      const resizeObserver = new ResizeObserver(() => {
+        const w = card.clientWidth, h = card.clientHeight;
+        if (w === 0 || h === 0) return;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+      resizeObserver.observe(card);
+
       animate3D();
     }
 
-    function clearCurrentModel() {
-      if (currentMeshGroup) {
-        scene.remove(currentMeshGroup);
-        currentMeshGroup = null;
-      }
-    }
-
     function loadDomainModel(key) {
-      clearCurrentModel();
+      if (currentMeshGroup) scene.remove(currentMeshGroup);
+      if (particleSystem) { scene.remove(particleSystem); particleSystem = null; }
+      
       currentMeshGroup = new THREE.Group();
 
-      const metalMat = new THREE.MeshStandardMaterial({ color: 0x8899a6, metalness: 0.85, roughness: 0.25, wireframe: isWireframe });
-      const shinyInoxMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.15, wireframe: isWireframe });
-      const accentMat = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.4, wireframe: isWireframe });
-      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.5 });
+      const matSteel = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2, wireframe: isWireframe });
+      const matInox = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.1, wireframe: isWireframe });
+      const matDark = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.5, wireframe: isWireframe });
+      const matNeon = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.6, wireframe: isWireframe });
 
       if (key === 'tubi') {
-        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 5, 32), metalMat);
+        // High Detail Gas Pipe
+        const pipeGeo = new THREE.CylinderGeometry(0.7, 0.7, 4.2, 32);
+        const pipe = new THREE.Mesh(pipeGeo, matSteel);
         pipe.rotation.z = Math.PI / 2;
         currentMeshGroup.add(pipe);
 
-        [-2.3, 2.3].forEach(x => {
-          const flange = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.25, 24), darkMat);
+        [-1.8, 1.8].forEach(x => {
+          const flange = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.2, 32), matDark);
           flange.rotation.z = Math.PI / 2; flange.position.x = x;
           currentMeshGroup.add(flange);
+          for(let a=0; a<Math.PI*2; a+=Math.PI/4) {
+            const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.26, 12), matInox);
+            bolt.rotation.z = Math.PI / 2;
+            bolt.position.set(x, Math.cos(a)*0.88, Math.sin(a)*0.88);
+            currentMeshGroup.add(bolt);
+          }
         });
 
-        const weld = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.05, 16, 32), accentMat);
+        const weld = new THREE.Mesh(new THREE.TorusGeometry(0.71, 0.04, 16, 32), matNeon);
         weld.rotation.y = Math.PI / 2;
         currentMeshGroup.add(weld);
 
       } else if (key === 'snc') {
-        const col1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.5, 0.3), shinyInoxMat); col1.position.set(-2, 0.25, 0);
-        const col2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.5, 0.3), shinyInoxMat); col2.position.set(2, 0.25, 0);
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.3, 0.3), shinyInoxMat); beam.position.set(0, 1.9, 0);
-        const diag = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.15, 0.15), shinyInoxMat); diag.position.set(0, 0.25, 0); diag.rotation.z = 0.72;
-        currentMeshGroup.add(col1, col2, beam, diag);
+        // Industrial Structural Truss Frame
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), matInox); p1.position.set(-1.8, 0, 0);
+        const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), matInox); p2.position.set(1.8, 0, 0);
+        const topB = new THREE.Mesh(new THREE.BoxGeometry(3.85, 0.25, 0.25), matInox); topB.position.set(0, 1.5, 0);
+        const botB = new THREE.Mesh(new THREE.BoxGeometry(3.85, 0.25, 0.25), matInox); botB.position.set(0, -1.5, 0);
+        
+        currentMeshGroup.add(p1, p2, topB, botB);
+
+        for(let i = -1.2; i <= 1.2; i += 0.8) {
+          const cross = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.1), matSteel);
+          cross.position.set(i, 0, 0); cross.rotation.z = 0.75;
+          currentMeshGroup.add(cross);
+        }
 
       } else if (key === 'automotive') {
-        const rail1 = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 0.2), darkMat); rail1.position.set(0, 0, -0.8);
-        const rail2 = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 0.2), darkMat); rail2.position.set(0, 0, 0.8);
-        const engine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 1.2), metalMat); engine.position.set(-1.2, 0.4, 0);
-        currentMeshGroup.add(rail1, rail2, engine);
+        // Powertrain Chassis & Brake Disc Assembly
+        const frameL = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.15, 0.15), matDark); frameL.position.set(0, 0, -0.7);
+        const frameR = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.15, 0.15), matDark); frameR.position.set(0, 0, 0.7);
+        const engine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 1.0), matSteel); engine.position.set(-1.0, 0.3, 0);
+        
+        currentMeshGroup.add(frameL, frameR, engine);
 
-        [[-1.5, -1.2], [-1.5, 1.2], [1.5, -1.2], [1.5, 1.2]].forEach(pos => {
-          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.3, 24), darkMat);
-          wheel.rotation.x = Math.PI / 2; wheel.position.set(pos[0], -0.2, pos[1]);
-          currentMeshGroup.add(wheel);
+        [[-1.2, -0.95], [-1.2, 0.95], [1.2, -0.95], [1.2, 0.95]].forEach(pos => {
+          const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 24), matInox);
+          disc.rotation.x = Math.PI / 2; disc.position.set(pos[0], -0.2, pos[1]);
+          const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.18), matNeon);
+          caliper.position.set(pos[0], -0.05, pos[1]);
+          currentMeshGroup.add(disc, caliper);
         });
 
       } else if (key === 'agricoltura') {
-        const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 2.2, 24), darkMat);
-        motor.rotation.z = Math.PI / 2; motor.position.set(-1.0, 0.2, 0);
-        const pump = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.6, 24), shinyInoxMat);
-        pump.rotation.x = Math.PI / 2; pump.position.set(0.6, 0.2, 0);
-        const pipeOut = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2.0, 16), shinyInoxMat);
-        pipeOut.position.set(0.6, 1.3, 0);
-        currentMeshGroup.add(motor, pump, pipeOut);
+        // High Pressure Hydraulic Pump Assembly
+        const motorBody = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 2.0, 32), matDark);
+        motorBody.rotation.z = Math.PI / 2; motorBody.position.set(-0.8, 0, 0);
+        
+        // Cooling fins
+        for(let x = -1.6; x <= 0.0; x += 0.2) {
+          const fin = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.04, 32), matSteel);
+          fin.rotation.z = Math.PI / 2; fin.position.x = x;
+          currentMeshGroup.add(fin);
+        }
+
+        const pumpVolute = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.5, 32), matInox);
+        pumpVolute.rotation.x = Math.PI / 2; pumpVolute.position.set(0.6, 0, 0);
+
+        const outPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.5, 24), matInox);
+        outPipe.position.set(0.6, 0.9, 0);
+
+        currentMeshGroup.add(motorBody, pumpVolute, outPipe);
       }
+
+      // Auto-Center Mesh in Viewport
+      const box = new THREE.Box3().setFromObject(currentMeshGroup);
+      const center = box.getCenter(new THREE.Vector3());
+      currentMeshGroup.position.sub(center);
 
       scene.add(currentMeshGroup);
     }
@@ -454,11 +497,11 @@
     function animate3D() {
       requestAnimationFrame(animate3D);
       if (controls) controls.update();
-      if (currentMeshGroup && autoRotate) currentMeshGroup.rotation.y += 0.006;
+      if (currentMeshGroup && autoRotate) currentMeshGroup.rotation.y += 0.005;
       renderer.render(scene, camera);
     }
 
-    function resetCamera() { camera.position.set(5, 4, 7); controls.target.set(0, 0, 0); }
+    function resetCamera() { camera.position.set(0, 2.5, 6); controls.target.set(0, 0, 0); }
     function toggleAutoRotate() { autoRotate = !autoRotate; playBeep(700, 'sine', 0.08); }
     function toggleWireframe() {
       isWireframe = !isWireframe;
@@ -488,45 +531,84 @@
       document.getElementById('aiDiagnosisText').innerText = conf.ai;
 
       loadDomainModel(key);
-      playBeep(900, 'sine', 0.12);
+      playBeep(900, 'sine', 0.1);
     }
 
-    let chartCanvas, chartCtx, chartBuffer = Array(50).fill(50);
+    // --- Dynamic Telemetry Canvas Chart Engine ---
+    let tCanvas, tCtx, tBuffer = Array(60).fill(50);
+    
     function initChart() {
-      chartCanvas = document.getElementById('telemetryCanvas');
-      chartCtx = chartCanvas.getContext('2d');
-      chartCanvas.width = chartCanvas.parentElement.clientWidth;
-      chartCanvas.height = chartCanvas.parentElement.clientHeight;
-      setInterval(updateChartData, 200);
-      drawChart();
+      tCanvas = document.getElementById('telemetryCanvas');
+      tCtx = tCanvas.getContext('2d');
+
+      const container = tCanvas.parentElement;
+      const resizeChart = () => {
+        tCanvas.width = container.clientWidth * window.devicePixelRatio;
+        tCanvas.height = container.clientHeight * window.devicePixelRatio;
+        tCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      };
+
+      new ResizeObserver(resizeChart).observe(container);
+      resizeChart();
+
+      setInterval(() => {
+        tBuffer.shift();
+        const prev = tBuffer[tBuffer.length - 1];
+        tBuffer.push(Math.min(Math.max(prev + (Math.random() - 0.49) * 10, 20), 80));
+        
+        // FFT Bars update
+        const fft = document.getElementById('fftContainer');
+        if (fft) {
+          fft.innerHTML = Array.from({length: 20}).map(() => `<div class="fft-bar" style="height:${Math.floor(Math.random()*85)+10}%;"></div>`).join('');
+        }
+      }, 150);
+
+      renderChartLoop();
     }
 
-    function updateChartData() {
-      chartBuffer.shift();
-      const last = chartBuffer[chartBuffer.length - 1];
-      chartBuffer.push(Math.min(Math.max(last + (Math.random() - 0.48) * 8, 25), 75));
-      const fft = document.getElementById('fftContainer');
-      if (fft) fft.innerHTML = Array.from({length: 16}).map(() => `<div class="fft-bar" style="height:${Math.floor(Math.random()*80)+15}%;"></div>`).join('');
-    }
+    function renderChartLoop() {
+      requestAnimationFrame(renderChartLoop);
+      if (!tCtx || !tCanvas) return;
+      const w = tCanvas.clientWidth, h = tCanvas.clientHeight;
+      if (w === 0 || h === 0) return;
 
-    function drawChart() {
-      requestAnimationFrame(drawChart);
-      if (!chartCtx || !chartCanvas) return;
-      const w = chartCanvas.width, h = chartCanvas.height;
-      chartCtx.clearRect(0, 0, w, h);
+      tCtx.clearRect(0, 0, w, h);
 
-      chartCtx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-      chartCtx.setLineDash([4, 4]);
-      chartCtx.beginPath(); chartCtx.moveTo(0, h * 0.2); chartCtx.lineTo(w, h * 0.2); chartCtx.stroke();
-      chartCtx.setLineDash([]);
+      // Draw Grid Lines
+      tCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      tCtx.lineWidth = 1;
+      for(let y = 0; y < h; y += 25) {
+        tCtx.beginPath(); tCtx.moveTo(0, y); tCtx.lineTo(w, y); tCtx.stroke();
+      }
 
-      const step = w / (chartBuffer.length - 1);
-      chartCtx.beginPath(); chartCtx.strokeStyle = '#00f2fe'; chartCtx.lineWidth = 2.5;
-      chartBuffer.forEach((val, i) => {
+      // Draw Threshold Line (Upper Limit)
+      tCtx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+      tCtx.setLineDash([4, 4]);
+      tCtx.beginPath(); tCtx.moveTo(0, h * 0.25); tCtx.lineTo(w, h * 0.25); tCtx.stroke();
+      tCtx.setLineDash([]);
+
+      // Draw Dynamic Wave
+      const step = w / (tBuffer.length - 1);
+      
+      const grad = tCtx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(0, 242, 254, 0.35)');
+      grad.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
+
+      tCtx.beginPath();
+      tBuffer.forEach((val, i) => {
         const x = i * step, y = h - (val / 100) * h;
-        if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+        if (i === 0) tCtx.moveTo(x, y); else tCtx.lineTo(x, y);
       });
-      chartCtx.stroke();
+      
+      // Stroke
+      tCtx.strokeStyle = '#00f2fe';
+      tCtx.lineWidth = 2.5;
+      tCtx.stroke();
+
+      // Fill Area
+      tCtx.lineTo(w, h); tCtx.lineTo(0, h); tCtx.closePath();
+      tCtx.fillStyle = grad;
+      tCtx.fill();
     }
 
     function exportPDF() {
@@ -546,7 +628,9 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      init3D(); initChart(); switchDomain('tubi');
+      init3D();
+      initChart();
+      switchDomain('tubi');
     });
   </script>
 </body>
