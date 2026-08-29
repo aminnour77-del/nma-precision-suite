@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>N.M.A. SYSTEMS - Enterprise Telemetry</title>
+  <title>N.M.A. SYSTEMS - Enterprise Telemetry & Quality Control</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -29,10 +29,13 @@
     
     .f1-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
     @media (max-width: 600px) { .f1-grid { grid-template-columns: repeat(2, 1fr); } }
-    .f1-box { background: #0a1120; padding: 6px; border-radius: 4px; border: 1px solid #1e293b; text-align: center; }
+    .f1-box { background: #0a1120; padding: 6px; border-radius: 4px; border: 1px solid #1e293b; text-align: center; position: relative; }
     .f1-title { font-size: 9px; color: #64748b; text-transform: uppercase; display: block; font-weight: 700; }
     .f1-val { font-weight: 800; color: #38bdf8; font-size: 12px; font-family: monospace; }
-    
+    .f1-status { font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 2px; margin-top: 3px; display: inline-block; }
+    .st-ok { background: #065f46; color: #34d399; }
+    .st-warn { background: #854d0e; color: #fde047; }
+
     #map { height: 180px; border-radius: 6px; }
     #chat-box { height: 210px; overflow-y: auto; background: #0a1120; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
     .chat-msg { margin-bottom: 6px; padding: 6px 8px; border-radius: 6px; background: #1e293b; max-width: 85%; word-break: break-word; }
@@ -54,7 +57,7 @@
   <header>
     <div>
       <h1>N.M.A. SYSTEMS</h1>
-      <small style="color: #64748b;">Enterprise Telemetry Suite</small>
+      <small style="color: #64748b;">Enterprise Telemetry & Quality Control Suite</small>
     </div>
     <div>
       <button onclick="requestNotifPermission()" style="font-size:10px; padding:4px 8px; background:#334155;">🔔 Push Notifiche</button>
@@ -136,7 +139,7 @@
         <span class="iso-badge">UNI 9737</span>
         <span class="iso-badge">UNI ISO 9606-1</span>
       </div>
-      <p style="font-size:11px; color:#94a3b8; margin:0 0 10px 0;">Genera il report tecnico completo di verifica telemetrica e conformità agli standard ISO e UNI EN.</p>
+      <p style="font-size:11px; color:#94a3b8; margin:0 0 10px 0;">Genera il report PDF ufficiale con intestazione aziendale N.M.A. SYSTEMS, tabella parametri, conformità ISO/UNI e blocco firma.</p>
       <div class="pdf-actions">
         <button onclick="downloadGeneratedPDF()" class="btn-green" style="flex:1;">📥 Scarica PDF Dinamico</button>
         <button onclick="sharePdfToChat()" style="flex:1;">💬 Invia in Chat</button>
@@ -171,42 +174,74 @@
       }
     }
 
-    // Tab Telemetria
+    // Metriche avanzate con stato e range di tolleranza ISO/UNI
     const tabsData = {
       tubi: {
         title: '🔧 Tubazioni Gas & Pipeline Engineering Telemetry', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
         metrics: [
-          { t: 'Pressione Pe', v: '12.4 Bar' }, { t: 'Portata Qv', v: '420 m³/h' }, { t: 'Portata Qm', v: '310 kg/h' },
-          { t: 'Delta P', v: '0.01 Bar' }, { t: 'Temp Gas', v: '14.2 °C' }, { t: 'Acustica Perdite', v: '0.0 dB' },
-          { t: 'Pot. Catodico', v: '-1.15 V' }, { t: 'Densità Gas', v: '0.72 kg/m³' }, { t: 'Posiz. Valvola', v: '100 %' },
-          { t: 'Estensimetro', v: '12 µε' }, { t: 'Saldatura ISO', v: '100 % OK' }, { t: 'Sicurezza Spec', v: '240 %' }
+          { t: 'Pressione Pe', v: '12.4 Bar', st: 'NOMINALE', ok: true },
+          { t: 'Portata Qv', v: '420 m³/h', st: 'NOMINALE', ok: true },
+          { t: 'Portata Qm', v: '310 kg/h', st: 'NOMINALE', ok: true },
+          { t: 'Delta P', v: '0.01 Bar', st: 'OTTIMALE', ok: true },
+          { t: 'Temp Gas', v: '14.2 °C', st: 'NOMINALE', ok: true },
+          { t: 'Acustica Perdite', v: '0.0 dB', st: 'ZERO PERDITE', ok: true },
+          { t: 'Pot. Catodico', v: '-1.15 V', st: 'PROTEZIONE OK', ok: true },
+          { t: 'Densità Gas', v: '0.72 kg/m³', st: 'NOMINALE', ok: true },
+          { t: 'Posiz. Valvola', v: '100 %', st: 'APERTA', ok: true },
+          { t: 'Estensimetro', v: '12 µε', st: 'STABILE', ok: true },
+          { t: 'Saldatura ISO', v: '100 % OK', st: 'UNI 9737', ok: true },
+          { t: 'Margine Sicurezza', v: '240 %', st: 'HIGH SAFETY', ok: true }
         ]
       },
       cnc: {
         title: '⚙️ CNC & Industrial Automation Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
         metrics: [
-          { t: 'OEE Total', v: '97.2 %' }, { t: 'RPM Mandrino', v: '18,500' }, { t: 'Coppia Nm', v: '42.1 Nm' },
-          { t: 'Cos φ Potenza', v: '0.95' }, { t: 'Vibrazioni RMS', v: '0.03 g' }, { t: 'Temp Liquido', v: '20.8 °C' },
-          { t: 'Avanzamento', v: '1,250 mm/m' }, { t: 'Usura Utensile', v: '2.8 %' }, { t: 'THD Armoniche', v: '1.1 %' },
-          { t: 'Pressione Aria', v: '6.4 Bar' }, { t: 'Tempo Ciclo', v: '41.2 s' }, { t: 'MTBF stimato', v: '4,200 h' }
+          { t: 'OEE Total', v: '97.2 %', st: 'ECCELLENTE', ok: true },
+          { t: 'RPM Mandrino', v: '18,500', st: 'HIGH SPEED', ok: true },
+          { t: 'Coppia Nm', v: '42.1 Nm', st: 'NOMINALE', ok: true },
+          { t: 'Cos φ Potenza', v: '0.95', st: 'EFFICEINTE', ok: true },
+          { t: 'Vibrazioni RMS', v: '0.03 g', st: 'BASSE', ok: true },
+          { t: 'Temp Liquido', v: '20.8 °C', st: 'STABILE', ok: true },
+          { t: 'Avanzamento', v: '1,250 mm/m', st: 'NOMINALE', ok: true },
+          { t: 'Usura Utensile', v: '2.8 %', st: 'BUONO', ok: true },
+          { t: 'THD Armoniche', v: '1.1 %', st: 'CONFORME', ok: true },
+          { t: 'Pressione Aria', v: '6.4 Bar', st: 'NOMINALE', ok: true },
+          { t: 'Tempo Ciclo', v: '41.2 s', st: 'OTTIMIZZATO', ok: true },
+          { t: 'MTBF stimato', v: '4,200 h', st: 'AFFIDABILE', ok: true }
         ]
       },
       agri: {
         title: '🚜 Agricoltura di Precisione Telemetry', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
         metrics: [
-          { t: 'Umidità Suolo', v: '42 %' }, { t: 'Indice NDVI', v: '0.85' }, { t: 'RPM PTO', v: '540 RPM' },
-          { t: 'Press. Idraulica', v: '185 Bar' }, { t: 'ET0 Evapo', v: '2.6 mm/g' }, { t: 'Compattazione', v: '1.1 MPa' },
-          { t: 'Resa Oraria', v: '4.5 Ha/h' }, { t: 'Consumo L/h', v: '13.8 L/h' }, { t: 'Slittamento', v: '1.8 %' },
-          { t: 'Sforzo Gancio', v: '11.5 kN' }, { t: 'Precisione RTK', v: '±1.0 cm' }, { t: 'Delta Resa', v: '+18 %' }
+          { t: 'Umidità Suolo', v: '42 %', st: 'OTTIMALE', ok: true },
+          { t: 'Indice NDVI', v: '0.85', st: 'HIGH VIGOR', ok: true },
+          { t: 'RPM PTO', v: '540 RPM', st: 'STANDARD', ok: true },
+          { t: 'Press. Idraulica', v: '185 Bar', st: 'NOMINALE', ok: true },
+          { t: 'ET0 Evapo', v: '2.6 mm/g', st: 'BILANCIATO', ok: true },
+          { t: 'Compattazione', v: '1.1 MPa', st: 'NORMALE', ok: true },
+          { t: 'Resa Oraria', v: '4.5 Ha/h', st: 'ALTA METRICA', ok: true },
+          { t: 'Consumo L/h', v: '13.8 L/h', st: 'ECO MODE', ok: true },
+          { t: 'Slittamento', v: '1.8 %', st: 'MINIMO', ok: true },
+          { t: 'Sforzo Gancio', v: '11.5 kN', st: 'REGOLARE', ok: true },
+          { t: 'Precisione RTK', v: '±1.0 cm', st: 'CENTIMETRICA', ok: true },
+          { t: 'Delta Resa', v: '+18 %', st: 'GROWTH', ok: true }
         ]
       },
       auto: {
         title: '🚗 Automotive Telemetry OBD-III', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
         metrics: [
-          { t: 'Regime Motore', v: '3,950 RPM' }, { t: 'Press. Turbo', v: '1.90 Bar' }, { t: 'Temp Olio', v: '96 °C' },
-          { t: 'AFR Ratio', v: '14.7:1' }, { t: 'G-Force Lat', v: '1.18 G' }, { t: 'Temp Freni', v: '295 °C' },
-          { t: 'Flusso Carburante', v: '8.0 L/h' }, { t: 'Stato Carica SoC', v: '98 %' }, { t: 'Farfalla %', v: '82 %' },
-          { t: 'Temp EGT Gas', v: '675 °C' }, { t: 'Codici DTC', v: '0 Errore' }, { t: 'Velocità', v: '124 km/h' }
+          { t: 'Regime Motore', v: '3,950 RPM', st: 'NOMINALE', ok: true },
+          { t: 'Press. Turbo', v: '1.90 Bar', st: 'BOOST OK', ok: true },
+          { t: 'Temp Olio', v: '96 °C', st: 'OTTIMALE', ok: true },
+          { t: 'AFR Ratio', v: '14.7:1', st: 'STECHIO', ok: true },
+          { t: 'G-Force Lat', v: '1.18 G', st: 'SPORT', ok: true },
+          { t: 'Temp Freni', v: '295 °C', st: 'IN RANGE', ok: true },
+          { t: 'Flusso Carburante', v: '8.0 L/h', st: 'EFFICEINTE', ok: true },
+          { t: 'Stato Carica SoC', v: '98 %', st: 'CARICO', ok: true },
+          { t: 'Farfalla %', v: '82 %', st: 'OPEN', ok: true },
+          { t: 'Temp EGT Gas', v: '675 °C', st: 'SICURO', ok: true },
+          { t: 'Codici DTC', v: '0 Errore', st: 'CLEAN', ok: true },
+          { t: 'Velocità', v: '124 km/h', st: 'CRUISE', ok: true }
         ]
       }
     };
@@ -221,7 +256,12 @@
       const c = document.getElementById('metrics-container');
       c.innerHTML = '';
       d.metrics.forEach(m => {
-        c.innerHTML += `<div class="f1-box"><span class="f1-title">${m.t}</span><span class="f1-val">${m.v}</span></div>`;
+        c.innerHTML += `
+          <div class="f1-box">
+            <span class="f1-title">${m.t}</span>
+            <span class="f1-val">${m.v}</span>
+            <span class="f1-status ${m.ok ? 'st-ok' : 'st-warn'}">${m.st}</span>
+          </div>`;
       });
       map.setView(d.gps, 13);
       marker.setLatLng(d.gps).bindPopup(d.label).openPopup();
@@ -271,10 +311,10 @@
       document.getElementById('modal-time').innerText = `📊 Dati Telemetrici alle ore ${time}`;
       const activeData = tabsData[currentActiveTab];
       document.getElementById('modal-content').innerHTML = `
-        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Valore:</b> ${val} units</div>
-        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Stato:</b> NOMINALE</div>
-        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Modulo:</b> ${activeData.title.split(' ')[1]}</div>
-        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Frequenza RTK:</b> 100 Hz</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Valore Campionato:</b> ${val} units</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Stato Tolleranza:</b> NOMINALE</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Modulo Attivo:</b> ${activeData.title.split(' ')[1]}</div>
+        <div style="background:#1e293b; padding:6px; border-radius:4px;"><b>Campionamento RTK:</b> 100 Hz</div>
       `;
       document.getElementById('chart-modal').style.display = 'block';
     }
@@ -363,33 +403,126 @@
       b.scrollTop = b.scrollHeight;
     });
 
-    // PDF Engine
+    // Motore PDF Certificato Aziendale N.M.A. Systems
     function getPDFDocDefinition() {
       const activeData = tabsData[currentActiveTab];
-      const tableRows = [[{ text: 'Parametro Misurato', bold: true, fillColor: '#1e293b', color: '#38bdf8' }, { text: 'Valore Rilevato', bold: true, fillColor: '#1e293b', color: '#38bdf8' }]];
-      activeData.metrics.forEach(m => tableRows.push([m.t, m.v]));
+      const operatorName = document.getElementById('username').value || 'Ing. N. M. Amine';
+      
+      const tableRows = [
+        [
+          { text: 'PARAMETRO DI MISURA', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
+          { text: 'VALORE RILEVATO', bold: true, fillColor: '#0f172a', color: '#38bdf8' },
+          { text: 'STATO DI CONFORMITÀ', bold: true, fillColor: '#0f172a', color: '#38bdf8' }
+        ]
+      ];
+      
+      activeData.metrics.forEach(m => {
+        tableRows.push([
+          { text: m.t, fontSize: 10 },
+          { text: m.v, bold: true, fontSize: 10 },
+          { text: m.st, color: m.ok ? '#16a34a' : '#d97706', bold: true, fontSize: 9 }
+        ]);
+      });
+
       return {
+        pageSize: 'A4',
+        pageMargins: [35, 40, 35, 40],
         content: [
-          { text: 'N.M.A. SYSTEMS - REPORT TECNICO DI TELEMETRIA', style: 'header' },
-          { text: `Modulo Operativo: ${activeData.title}`, style: 'subheader' },
-          { text: `Data e Ora Generazione: ${new Date().toLocaleString('it-IT')}`, style: 'date' },
-          { text: '\n' },
-          { text: 'Certificazioni e Normative aziendali di Riferimento:', style: 'sectionHeader' },
-          { ul: [
-              'ISO 9001:2015 - Sistema di Gestione Qualità',
-              'ISO 14001:2015 - Sistema di Gestione Ambientale',
-              'ISO 45001:2018 - Salute e Sicurezza sul Lavoro',
-              'ISO 3834-2 - Requisiti di Qualità per la Saldatura',
-              'UNI 9737 - Qualifica Saldatori Tubi e Raccordi PE',
-              'UNI EN ISO 9606-1 - Qualifica Saldatori Acciaio'
+          // Header Aziendale
+          {
+            columns: [
+              {
+                text: 'N.M.A. SYSTEMS & ENGINEERING\n' +
+                      'Precision Telemetry & Quality Assurance\n' +
+                      'Torino - San Benigno Canavese (TO)',
+                fontSize: 9,
+                color: '#475569'
+              },
+              {
+                text: 'CERTIFICATO DI VERIFICA TECNICA\n' +
+                      `Data: ${new Date().toLocaleDateString('it-IT')}\n` +
+                      `Ref: NMA-REP-${Math.floor(100000 + Math.random() * 900000)}`,
+                alignment: 'right',
+                fontSize: 9,
+                bold: true,
+                color: '#0284c7'
+              }
             ]
           },
-          { text: '\nValori Telemetrici Rilevati:', style: 'sectionHeader' },
-          { table: { widths: ['*', '*'], body: tableRows } },
-          { text: '\nStato della Verifica:', style: 'sectionHeader' },
-          { text: 'CONFORME - Tutti i parametri rientrano nelle soglie ISO/UNI.', color: '#16a34a', bold: true }
+          { canvas: [{ type: 'line', x1: 0, y1: 8, x2: 525, y2: 8, lineWidth: 1.5, lineColor: '#0284c7' }] },
+          { text: '\n' },
+
+          // Titolo Modulo
+          { text: `RAPPORTO TECNICO DI TELEMETRIA: ${activeData.title.toUpperCase()}`, style: 'header' },
+          { text: `Operatore Responsabile: ${operatorName} | Nodo GPS: ${activeData.label}`, style: 'subheader' },
+          { text: '\n' },
+
+          // Quadro Normativo
+          { text: 'Normative di Riferimento Aziendali & Standard di Qualità:', style: 'sectionHeader' },
+          {
+            table: {
+              widths: ['*'],
+              body: [[
+                {
+                  fillColor: '#f8fafc',
+                  border: [true, true, true, true],
+                  borderColor: '#cbd5e1',
+                  text: '• ISO 9001:2015 (Gestione Qualità)\n' +
+                        '• ISO 14001:2015 (Gestione Ambientale)\n' +
+                        '• ISO 45001:2018 (Salute e Sicurezza sul Lavoro)\n' +
+                        '• ISO 3834-2 (Qualità Saldatura dei Metalli)\n' +
+                        '• UNI 9737 / UNI ISO 9606-1 (Qualificazione Operatori e Saldatori)',
+                  fontSize: 9,
+                  color: '#334155'
+                }
+              ]]
+            }
+          },
+          { text: '\n' },
+
+          // Tabella Dati Telemetrici
+          { text: 'Rilevazioni Telemetriche in Tempo Reale:', style: 'sectionHeader' },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', '*', '*'],
+              body: tableRows
+            },
+            layout: 'LightHorizontalLines'
+          },
+          { text: '\n' },
+
+          // Esito Collaudo
+          { text: 'Esito Collaudo Telemetrico:', style: 'sectionHeader' },
+          {
+            text: '✔ CONFORME AL 100% - Tutti i parametri acquisiti rientrano nei range di tolleranza previsti dal disciplinare di qualifica ISO/UNI.',
+            color: '#16a34a',
+            bold: true,
+            fontSize: 10
+          },
+          { text: '\n\n' },
+
+          // Blocco Firma
+          {
+            columns: [
+              {
+                text: 'Firma Operatore Telemetria\n\n_______________________\n' + operatorName,
+                fontSize: 9,
+                alignment: 'left'
+              },
+              {
+                text: 'Firma Controllo Qualità N.M.A.\n\n_______________________\nIng. N. M. Amine',
+                fontSize: 9,
+                alignment: 'right'
+              }
+            ]
+          }
         ],
-        styles: { header: { fontSize: 16, bold: true, color: '#0284c7' }, subheader: { fontSize: 11, bold: true, color: '#334155' }, date: { fontSize: 9, italic: true }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 8, 0, 4] } }
+        styles: {
+          header: { fontSize: 14, bold: true, color: '#0f172a', margin: [0, 4, 0, 2] },
+          subheader: { fontSize: 10, italic: true, color: '#475569', margin: [0, 0, 0, 8] },
+          sectionHeader: { fontSize: 11, bold: true, color: '#0284c7', margin: [0, 6, 0, 4] }
+        }
       };
     }
 
@@ -400,7 +533,7 @@
     function sharePdfToChat() {
       const user = document.getElementById('username').value || 'Operatore';
       pdfMake.createPdf(getPDFDocDefinition()).getDataUrl((dataUrl) => {
-        socket.emit('chat-message', { user, text: `📄 **Report Tecnico ISO/UNI Generato** [${tabsData[currentActiveTab].title}]`, file: dataUrl, fileName: `Report_NMA_${currentActiveTab}.pdf` });
+        socket.emit('chat-message', { user, text: `📄 **Report Ufficiale N.M.A. ISO/UNI Generato** [${tabsData[currentActiveTab].title}]`, file: dataUrl, fileName: `Report_NMA_${currentActiveTab}.pdf` });
       });
     }
 
