@@ -204,12 +204,18 @@
       <div style="display:flex; gap:6px;">
         <button onclick="exportData('csv')" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📊 Export CSV</button>
         <button onclick="exportData('json')" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📄 Export JSON</button>
+      
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <button onclick="injectFailure()" class="btn-green" style="flex:1; padding:6px; background:#ef4444; border-color:#dc2626; color:#fff;">⚠️ Inietta Guasto Test</button>
+        <button onclick="downloadManualPDF()" class="btn-green" style="flex:1; padding:6px; background:#1e293b; border-color:#334155; color:#38bdf8;">📘 Manuale Tecnico</button>
       </div>
     </div>
+
   </div>
 
   <script type="module">
     import { getPDFDocDefinition } from '/js/modules/pdfGenerator.js';
+import { getTechnicalManualDefinition } from "/js/modules/manualGenerator.js";
 
     const socket = io();
     let currentTab = 'auto';
@@ -655,3 +661,15 @@
   </script>
 </body>
 </html>
+<script>
+  window.injectFailure = function() {
+    if (typeof addLog === 'function') {
+      addLog('SIMULAZIONE GUASTO: Anomalie di pressione e temperatura forzate dal terminale di collaudo!', true);
+    }
+  };
+
+  window.downloadManualPDF = function() {
+    const user = document.getElementById('username').value || 'Ing. N. M. Amine';
+    pdfMake.createPdf(getTechnicalManualDefinition(user)).download('NMA_Manuale_Tecnico_SCADA.pdf');
+  };
+</script>
