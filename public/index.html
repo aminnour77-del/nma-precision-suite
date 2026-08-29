@@ -47,10 +47,12 @@
       font-size: 11px;
       color: #38bdf8;
       background: rgba(3, 7, 18, 0.85);
-      padding: 4px 10px;
-      border-radius: 4px;
+      padding: 6px 12px;
+      border-radius: 6px;
       border: 1px solid #334155;
-      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .canvas-controls {
       position: absolute;
@@ -144,9 +146,9 @@
     <div class="card">
       <h2>🌍 GPS Global Tactical Radar</h2>
       <div class="f1-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
-        <div class="f1-box"><span class="f1-title">Nodo GPS</span><span class="f1-val" id="gps-label" style="font-size:10px;">Torino Flotta</span></div>
+        <div class="f1-box"><span class="f1-title">Nodo Selezionato</span><span class="f1-val" id="gps-label" style="font-size:10px;">Torino Flotta</span></div>
         <div class="f1-box"><span class="f1-title">Latenza</span><span class="f1-val" style="color:#4ade80;">4 ms</span></div>
-        <div class="f1-box"><span class="f1-title">Stato</span><span class="f1-val" style="color:#4ade80;">TRACKING</span></div>
+        <div class="f1-box"><span class="f1-title">Stato Nodi</span><span class="f1-val" style="color:#4ade80;">4/4 ONLINE</span></div>
       </div>
       <div id="map" style="height: 170px; border-radius: 6px; margin-bottom: 10px;"></div>
 
@@ -166,7 +168,10 @@
           <button class="btn-3d" onclick="toggleWireframe()">🔲 Wireframe</button>
           <button class="btn-3d" onclick="reset3DCamera()">🎯 Recentra</button>
         </div>
-        <div class="canvas-overlay" id="asset-label">Rendering Asset CAD...</div>
+        <div class="canvas-overlay">
+          <span>⚙️ Velocità CAD:</span>
+          <input type="range" id="cad-speed" min="0" max="3" step="0.1" value="1" style="width: 70px; accent-color: #0284c7;">
+        </div>
       </div>
     </div>
 
@@ -210,6 +215,12 @@
     let currentTab = 'auto';
     let isWireframe = false;
     let animatedParts = [];
+    let speedMultiplier = 1;
+
+    // Controllo velocità CAD live
+    document.getElementById('cad-speed').addEventListener('input', (e) => {
+      speedMultiplier = parseFloat(e.target.value);
+    });
 
     // 1. ECharts Setup
     const chartDom = document.getElementById('echarts2d');
@@ -228,7 +239,6 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
     const keyLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
     keyLight.position.set(5, 8, 5);
@@ -367,32 +377,44 @@
       requestAnimationFrame(animateThree);
       controls.update();
       
-      // Animazioni basate sui dati live
       animatedParts.forEach(p => {
-        if (p.type === 'wheel') p.obj.rotation.z += 0.05;
-        if (p.type === 'spindle') p.obj.rotation.y += 0.1;
-        if (p.type === 'valve') p.obj.rotation.z += 0.02;
+        if (p.type === 'wheel') p.obj.rotation.z += 0.05 * speedMultiplier;
+        if (p.type === 'spindle') p.obj.rotation.y += 0.1 * speedMultiplier;
+        if (p.type === 'valve') p.obj.rotation.z += 0.02 * speedMultiplier;
       });
 
-      if (activeGroup) activeGroup.rotation.y += 0.003;
+      if (activeGroup) activeGroup.rotation.y += 0.003 * speedMultiplier;
       renderer.render(scene, camera);
     }
     animateThree();
 
-    // Map Setup
-    const map = L.map('map').setView([45.0800, 7.6900], 13);
+    // Map Setup Multi-Nodo
+    const map = L.map('map').setView([45.0800, 7.6900], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const marker = L.marker([45.0800, 7.6900]).addTo(map).bindPopup("Nodo Telemetrico Attivo");
+
+    const mapMarkers = {};
+    const nodes = {
+      auto: { gps: [45.0800, 7.6900], label: "🚗 Flotta Test Torino OBD-III" },
+      cnc: { gps: [45.0703, 7.6869], label: "🏭 Torino Fabbrica CNC" },
+      agri: { gps: [45.1500, 7.7500], label: "🚜 Campo Sperimentale AgTech" },
+      tubi: { gps: [45.0600, 7.6700], label: "🔧 Condotta Nord Torino" }
+    };
+
+    Object.keys(nodes).forEach(key => {
+      const n = nodes[key];
+      const m = L.marker(n.gps).addTo(map).bindPopup(`<b>${n.label}</b><br><button onclick="switchTab('${key}')" style="background:#0284c7;color:#fff;border:none;padding:2px 6px;border-radius:3px;cursor:pointer;margin-top:4px;">Seleziona</button>`);
+      mapMarkers[key] = m;
+    });
 
     // Dataset Globale
     const tabsData = {
       auto: {
         title: '🚗 Automotive OBD-III Telemetry Platform', gps: [45.0800, 7.6900], label: 'Flotta Test Torino',
         metrics: [
-          {t:'Regime', v:'3,950 RPM', st:'OK', alarm: false}, {t:'Press. Turbo', v:'2.45 Bar', st:'HIGH BOOST', alarm: true},
-          {t:'Temp. Olio', v:'96 °C', st:'OK', alarm: false}, {t:'Rapporto AFR', v:'14.7:1', st:'STECHIO', alarm: false},
-          {t:'G-Force Lat', v:'1.18 G', st:'SPORT', alarm: false}, {t:'Temp. Freni', v:'385 °C', st:'OVERHEAT', alarm: true},
-          {t:'Consumo Live', v:'8.0 L/h', st:'ECO', alarm: false}, {t:'Velocità', v:'124 km/h', st:'CRUISE', alarm: false}
+          {t:'Regime', v: 3950, unit:' RPM', st:'OK', alarm: false}, {t:'Press. Turbo', v: 2.45, unit:' Bar', st:'HIGH BOOST', alarm: true},
+          {t:'Temp. Olio', v: 96, unit:' °C', st:'OK', alarm: false}, {t:'Rapporto AFR', v: 14.7, unit:':1', st:'STECHIO', alarm: false},
+          {t:'G-Force Lat', v: 1.18, unit:' G', st:'SPORT', alarm: false}, {t:'Temp. Freni', v: 385, unit:' °C', st:'OVERHEAT', alarm: true},
+          {t:'Consumo Live', v: 8.0, unit:' L/h', st:'ECO', alarm: false}, {t:'Velocità', v: 124, unit:' km/h', st:'CRUISE', alarm: false}
         ],
         chart: {
           legend: ['Giri Motore (RPM)', 'Pressione Turbo (Bar)'],
@@ -404,10 +426,10 @@
       agri: {
         title: '🚜 Precision Agriculture & Smart Farming', gps: [45.1500, 7.7500], label: 'Campo Sperimentale',
         metrics: [
-          {t:'Umidità Suolo', v:'18 %', st:'CRITICA', alarm: true}, {t:'Indice NDVI', v:'0.85', st:'VIGOR', alarm: false},
-          {t:'RPM Presa Forza', v:'540 RPM', st:'STD', alarm: false}, {t:'Press. Idraulica', v:'185 Bar', st:'OK', alarm: false},
-          {t:'Compattazione', v:'1.1 MPa', st:'NORMA', alarm: false}, {t:'Resa Oraria', v:'4.5 Ha/h', st:'ALTA', alarm: false},
-          {t:'Precisione RTK', v:'±1.0 cm', st:'CENTIMETRICA', alarm: false}, {t:'Delta Resa', v:'+18 %', st:'GROWTH', alarm: false}
+          {t:'Umidità Suolo', v: 18, unit:' %', st:'CRITICA', alarm: true}, {t:'Indice NDVI', v: 0.85, unit:'', st:'VIGOR', alarm: false},
+          {t:'RPM Presa Forza', v: 540, unit:' RPM', st:'STD', alarm: false}, {t:'Press. Idraulica', v: 185, unit:' Bar', st:'OK', alarm: false},
+          {t:'Compattazione', v: 1.1, unit:' MPa', st:'NORMA', alarm: false}, {t:'Resa Oraria', v: 4.5, unit:' Ha/h', st:'ALTA', alarm: false},
+          {t:'Precisione RTK', v: 1.0, unit:' cm', st:'CENTIMETRICA', alarm: false}, {t:'Delta Resa', v: 18, unit:' %', st:'GROWTH', alarm: false}
         ],
         chart: {
           legend: ['Umidità Suolo (%)', 'Indice NDVI'],
@@ -419,10 +441,10 @@
       cnc: {
         title: '🏭 CNC & Industrial Robotics Telemetry', gps: [45.0703, 7.6869], label: 'Torino Fabbrica CNC',
         metrics: [
-          {t:'OEE Totale', v:'97.2 %', st:'ECCELLENTE', alarm: false}, {t:'RPM Mandrino', v:'18,500', st:'HIGH SPEED', alarm: false},
-          {t:'Coppia NM', v:'42.1 Nm', st:'OK', alarm: false}, {t:'Cos φ Potenza', v:'0.95', st:'EFFICIENTE', alarm: false},
-          {t:'Vibrazioni RMS', v:'0.09 g', st:'ALTE', alarm: true}, {t:'Avanzamento', v:'1,250 mm/m', st:'OK', alarm: false},
-          {t:'Usura Utensile', v:'2.8 %', st:'BUONO', alarm: false}, {t:'MTBF Stimato', v:'4,200 h', st:'AFFIDABILE', alarm: false}
+          {t:'OEE Totale', v: 97.2, unit:' %', st:'ECCELLENTE', alarm: false}, {t:'RPM Mandrino', v: 18500, unit:'', st:'HIGH SPEED', alarm: false},
+          {t:'Coppia NM', v: 42.1, unit:' Nm', st:'OK', alarm: false}, {t:'Cos φ Potenza', v: 0.95, unit:'', st:'EFFICIENTE', alarm: false},
+          {t:'Vibrazioni RMS', v: 0.09, unit:' g', st:'ALTE', alarm: true}, {t:'Avanzamento', v: 1250, unit:' mm/m', st:'OK', alarm: false},
+          {t:'Usura Utensile', v: 2.8, unit:' %', st:'BUONO', alarm: false}, {t:'MTBF Stimato', v: 4200, unit:' h', st:'AFFIDABILE', alarm: false}
         ],
         chart: {
           legend: ['Velocità Mandrino (RPM)', 'Vibrazioni RMS (g)'],
@@ -434,10 +456,10 @@
       tubi: {
         title: '🔧 Gas Pipeline & Infrastructure Engineering', gps: [45.0600, 7.6700], label: 'Condotta Nord Torino',
         metrics: [
-          {t:'Pressione PE', v:'12.4 Bar', st:'NOMINALE', alarm: false}, {t:'Portata Qv', v:'420 m³/h', st:'NOMINALE', alarm: false},
-          {t:'Temp. Gas', v:'14.2 °C', st:'OK', alarm: false}, {t:'Delta P', v:'0.01 Bar', st:'OTTIMALE', alarm: false},
-          {t:'Acustica Perdit.', v:'0.0 dB', st:'ZERO LOSS', alarm: false}, {t:'Pot. Catodico', v:'-1.15 V', st:'PROTEZIONE OK', alarm: false},
-          {t:'Estensimetro', v:'12 microE', st:'STABILE', alarm: false}, {t:'Saldatura ISO', v:'100 % OK', st:'UNI 9737', alarm: false}
+          {t:'Pressione PE', v: 12.4, unit:' Bar', st:'NOMINALE', alarm: false}, {t:'Portata Qv', v: 420, unit:' m³/h', st:'NOMINALE', alarm: false},
+          {t:'Temp. Gas', v: 14.2, unit:' °C', st:'OK', alarm: false}, {t:'Delta P', v: 0.01, unit:' Bar', st:'OTTIMALE', alarm: false},
+          {t:'Acustica Perdit.', v: 0.0, unit:' dB', st:'ZERO LOSS', alarm: false}, {t:'Pot. Catodico', v: -1.15, unit:' V', st:'PROTEZIONE OK', alarm: false},
+          {t:'Estensimetro', v: 12, unit:' microE', st:'STABILE', alarm: false}, {t:'Saldatura ISO', v: 100, unit:' %', st:'UNI 9737', alarm: false}
         ],
         chart: {
           legend: ['Portata Volumetrica (m³/h)', 'Pressione Rete (Bar)'],
@@ -474,25 +496,16 @@
       myChart.setOption(option, true);
     }
 
-    window.switchTab = function(k, evt) {
-      currentTab = k;
-      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-      if(evt) evt.target.classList.add('active');
-      const d = tabsData[k];
-      document.getElementById('module-title').innerText = d.title;
-      document.getElementById('gps-label').innerText = d.label;
-      
+    function renderMetrics(d) {
       const c = document.getElementById('metrics-container');
       c.innerHTML = '';
       let hasAlarm = false;
 
       d.metrics.forEach(m => {
         const alarmClass = m.alarm ? 'alarm-box' : '';
-        if (m.alarm) {
-          hasAlarm = true;
-          addLog(`WARNING: ${m.t} fuori soglia (${m.v})`, true);
-        }
-        c.innerHTML += `<div class="f1-box ${alarmClass}"><span class="f1-title">${m.t}</span><span class="f1-val">${m.v}</span><span class="f1-status st-ok">${m.st}</span></div>`;
+        if (m.alarm) hasAlarm = true;
+        const valStr = typeof m.v === 'number' ? (Number.isInteger(m.v) ? m.v.toLocaleString() : m.v.toFixed(2)) : m.v;
+        c.innerHTML += `<div class="f1-box ${alarmClass}"><span class="f1-title">${m.t}</span><span class="f1-val">${valStr}${m.unit}</span><span class="f1-status st-ok">${m.st}</span></div>`;
       });
 
       const badge = document.getElementById('alert-status');
@@ -507,12 +520,55 @@
         badge.style.color = '#4ade80';
         badge.style.borderColor = '#22c55e';
       }
+    }
 
+    window.switchTab = function(k, evt) {
+      currentTab = k;
+      document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+      if (evt) {
+        evt.target.classList.add('active');
+      } else {
+        const btns = document.querySelectorAll('.selector-btn');
+        const mapKeys = ['tubi', 'cnc', 'agri', 'auto'];
+        const idx = mapKeys.indexOf(k);
+        if (idx !== -1 && btns[idx]) btns[idx].classList.add('active');
+      }
+
+      const d = tabsData[k];
+      document.getElementById('module-title').innerText = d.title;
+      document.getElementById('gps-label').innerText = d.label;
+
+      renderMetrics(d);
       map.setView(d.gps, 13);
-      marker.setLatLng(d.gps);
+      if (mapMarkers[k]) mapMarkers[k].openPopup();
+
       updateChart(d.chart);
       load3DAsset(k);
     };
+
+    // Streaming dinamico dati in tempo reale
+    setInterval(() => {
+      const activeData = tabsData[currentTab];
+      
+      // Fluttuazione casuale dei valori KPI
+      activeData.metrics.forEach(m => {
+        if (typeof m.v === 'number') {
+          const delta = (Math.random() - 0.48) * (m.v * 0.02);
+          m.v = Math.max(0, m.v + delta);
+        }
+      });
+
+      // Avanzamento streaming grafico
+      const s1 = activeData.chart.s1;
+      const s2 = activeData.chart.s2;
+      const last1 = s1[s1.length - 1];
+      const last2 = s2[s2.length - 1];
+      s1.shift(); s1.push(last1 + (Math.random() - 0.5) * (last1 * 0.05));
+      s2.shift(); s2.push(last2 + (Math.random() - 0.5) * (last2 * 0.05));
+
+      renderMetrics(activeData);
+      updateChart(activeData.chart);
+    }, 3000);
 
     window.changeTimeRange = function(range, evt) {
       document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
@@ -528,7 +584,7 @@
         const a = document.createElement('a'); a.href = url; a.download = `NMA_Data_${currentTab}.json`; a.click();
       } else if (type === 'csv') {
         let csv = 'Metrica,Valore,Stato\n';
-        activeData.metrics.forEach(m => { csv += `"${m.t}","${m.v}","${m.st}"\n`; });
+        activeData.metrics.forEach(m => { csv += `"${m.t}","${m.v}${m.unit}","${m.st}"\n`; });
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `NMA_Data_${currentTab}.csv`; a.click();
